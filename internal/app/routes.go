@@ -23,17 +23,18 @@ func MasterSendMessageToAll(context tele.Context, bot *BotData) error {
 }
 
 func HandleText(context tele.Context, bot *BotData) error {
-
-	return nil
-
 	id := context.Chat().ID
-	user := bot.Users[id]
+
+	user := getUser(bot.DB, id)
+
 	switch user.State {
 	case UserStateDefault:
 		return context.Send("What do you want from me?")
 	case UserStateSendingAll:
 		message := context.Message().Text
 		log.Print(string(message))
+		user.State = UserStateDefault
+		updateUser(bot.DB, user)
 		return context.Send("Thanks")
 	}
 	return nil
