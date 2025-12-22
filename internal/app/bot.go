@@ -11,8 +11,7 @@ type UserState int
 
 const (
 	// Registration Phase
-	UserStateFirstTimePassword UserState = iota
-	UserStateCodename
+	UserStateCodename UserState = iota
 
 	// Normal State of Being
 	UserStateDefault

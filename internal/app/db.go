@@ -29,19 +29,6 @@ func updateUser(db *sql.DB, user *UserData) {
 	}
 }
 
-func ensureUser(db *sql.DB, data *BotData, chatId int64) bool {
-
-	if data.Users[chatId] != nil {
-		return true
-	}
-
-	var isExist bool
-	queryResult := db.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE chat_id = $1)", chatId)
-	queryResult.Scan(&isExist)
-
-	return isExist
-}
-
 func getUser(db *sql.DB, chatId int64) *UserData {
 	log.Print("getUser: requested ", chatId)
 
@@ -49,8 +36,25 @@ func getUser(db *sql.DB, chatId int64) *UserData {
 	queryResult := db.QueryRow("select telegram_name, COALESCE(player_name, '') AS player_name, state, chat_id from users where chat_id = $1", chatId)
 	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.State, &newUser.ChatId)
 	if err != nil {
-		log.Print("ERROR: getUser ", chatId, ". ", err)
+		log.Print(err)
 		return nil
 	}
 	return &newUser
+}
+
+func ensureUser(db *sql.DB, chatId int64) bool {
+	var isExist bool
+	queryResult := db.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE chat_id = $1)", chatId)
+	queryResult.Scan(&isExist)
+
+	return isExist
+}
+
+func getOrCreateUser(db *sql.DB, context tele.Context) *UserData {
+	chatId := context.Chat().ID
+	user := getUser(db, chatId)
+	if user == nil {
+		user = registerUser(db, context)
+	}
+	return user
 }

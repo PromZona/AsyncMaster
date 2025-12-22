@@ -46,6 +46,7 @@ func main() {
 
 	botData := app.BotData{DB: db, Users: make(map[int64]*app.UserData)}
 
+	b.Handle("/start", func(ctx tele.Context) error { return app.HandleStartMessage(ctx, &botData) })
 	b.Handle(tele.OnText, func(ctx tele.Context) error { return app.HandleText(ctx, &botData) })
 	b.Handle("/sendAll", func(ctx tele.Context) error { return app.MasterSendMessageToAll(ctx, &botData) })
 
