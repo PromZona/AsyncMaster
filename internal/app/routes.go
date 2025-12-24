@@ -51,6 +51,7 @@ func HandleText(context tele.Context, bot *BotData) error {
 		log.Print(string(message))
 		user.State = UserStateDefault
 		updateUser(bot.DB, user)
+
 		return context.Send("Thanks")
 	}
 	return nil
