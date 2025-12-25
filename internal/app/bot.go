@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"strconv"
 
 	_ "github.com/lib/pq"
 	tele "gopkg.in/telebot.v4"
@@ -30,6 +31,10 @@ type UserData struct {
 	TelegramName string
 	PlayerName   string
 	State        UserState
+}
+
+func (user *UserData) Recipient() string {
+	return strconv.FormatInt(int64(user.ChatID), 10)
 }
 
 type BotData struct {

@@ -39,6 +39,17 @@ func getUser(db *sql.DB, chatId int64) *UserData {
 	return &newUser
 }
 
+func getUserByName(db *sql.DB, playerName string) (*UserData, error) {
+	var user UserData
+	queryResult := db.QueryRow("select telegram_name, COALESCE(player_name, '') AS player_name, state, chat_id from users where player_name = $1", playerName)
+	err := queryResult.Scan(&user.TelegramName, &user.PlayerName, &user.State, &user.ChatID)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	return &user, nil
+}
+
 func ensureUser(db *sql.DB, chatId int64) bool {
 	var isExist bool
 	queryResult := db.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE chat_id = $1)", chatId)
@@ -65,8 +76,15 @@ func createMessage(db *sql.DB, message *MessageStruct) {
 	log.Print("Created new Message: ", result)
 }
 
-func getMessage() {
-
+func getMessage(db *sql.DB, messageID string) (*MessageStruct, error) {
+	var message MessageStruct
+	queryResult := db.QueryRow("SELECT chat_id, message_title, message_id FROM messages WHERE message_id = $1", messageID)
+	err := queryResult.Scan(&message.ChatID, &message.MessageTitle, &message.MessageID)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	return &message, nil
 }
 
 func updateMessage() {

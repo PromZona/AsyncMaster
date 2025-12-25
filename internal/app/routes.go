@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"strconv"
@@ -61,8 +62,43 @@ func HandleSave(context tele.Context, bot *BotData) error {
 }
 
 func HandleSend(context tele.Context, bot *BotData) error {
-	// args := context.Args()
+	// /send TO WHAT
+	// TO can be player_name or ME or EVERYONE
+	// WHAT is message_id
+	args := context.Args()
+	if len(args) < 2 {
+		return context.Send("Expected 2 arguments: TO(player_name, ME or EVERYONE) and WHAT(message_id)")
+	}
+	playerName := args[0]
+	messageID := args[1]
 
+	user, err := getUserByName(bot.DB, playerName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return context.Send("Given player name not found")
+		} else {
+			log.Print("Error while searching player by name ", playerName, " ", err)
+			return context.Send("Error occured while searching for given player")
+		}
+	}
+
+	message, err := getMessage(bot.DB, messageID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return context.Send("Given messsage does not registered in the DB")
+		} else {
+			log.Print("Error while searching message by message_id ", messageID, " ", err)
+			return context.Send("Error occured while searching for message to send")
+		}
+	}
+
+	_, err = context.Bot().Copy(user, message)
+	if err != nil {
+		log.Print("Error occured while coping message ", err)
+		return context.Send("Failed to send requested message")
+	}
+
+	log.Print("Sent message [", messageID, "] to [", playerName, "]")
 	return nil
 }
 
