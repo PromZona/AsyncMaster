@@ -22,19 +22,16 @@ func registerUser(db *sql.DB, context tele.Context) *UserData {
 }
 
 func updateUser(db *sql.DB, user *UserData) {
-	log.Print("updateUser: ID = ", user.ChatId)
-	_, err := db.Exec("UPDATE users SET telegram_name = $1, player_name = $2, state = $3 WHERE chat_id = $4", user.TelegramName, user.PlayerName, user.State, user.ChatId)
+	_, err := db.Exec("UPDATE users SET telegram_name = $1, player_name = $2, state = $3 WHERE chat_id = $4", user.TelegramName, user.PlayerName, user.State, user.ChatID)
 	if err != nil {
-		log.Print("ERROR: while updating user ", user.ChatId, ". ", err)
+		log.Print("ERROR: while updating user ", user.ChatID, ". ", err)
 	}
 }
 
 func getUser(db *sql.DB, chatId int64) *UserData {
-	log.Print("getUser: requested ", chatId)
-
 	var newUser UserData
 	queryResult := db.QueryRow("select telegram_name, COALESCE(player_name, '') AS player_name, state, chat_id from users where chat_id = $1", chatId)
-	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.State, &newUser.ChatId)
+	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.State, &newUser.ChatID)
 	if err != nil {
 		log.Print(err)
 		return nil
@@ -57,4 +54,25 @@ func getOrCreateUser(db *sql.DB, context tele.Context) *UserData {
 		user = registerUser(db, context)
 	}
 	return user
+}
+
+func createMessage(db *sql.DB, message *MessageStruct) {
+	result, err := db.Exec("insert into messages (chat_id, message_id, message_title) values ($1, $2, $3)", message.ChatID, message.MessageID, message.MessageTitle)
+	if err != nil {
+		log.Print("Error whule creating Message: ", err)
+		return
+	}
+	log.Print("Created new Message: ", result)
+}
+
+func getMessage() {
+
+}
+
+func updateMessage() {
+
+}
+
+func deleteMessage() {
+
 }
