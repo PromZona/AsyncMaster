@@ -50,6 +50,33 @@ func getUserByName(db *sql.DB, playerName string) (*UserData, error) {
 	return &user, nil
 }
 
+func getUserPlayerNames(db *sql.DB) ([]string, error) {
+	var result []string
+	rows, err := db.Query("SELECT player_name FROM users")
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name string
+		innerErr := rows.Scan(&name)
+		if innerErr != nil {
+			log.Print(err)
+			return nil, err
+		}
+		result = append(result, name)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Print(err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func ensureUser(db *sql.DB, chatId int64) bool {
 	var isExist bool
 	queryResult := db.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE chat_id = $1)", chatId)

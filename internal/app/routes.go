@@ -63,42 +63,64 @@ func HandleSave(context tele.Context, bot *BotData) error {
 
 func HandleSend(context tele.Context, bot *BotData) error {
 	// /send TO WHAT
-	// TO can be player_name or ME or EVERYONE
+	// TO can be player_name or EVERYONE
 	// WHAT is message_id
 	args := context.Args()
 	if len(args) < 2 {
-		return context.Send("Expected 2 arguments: TO(player_name, ME or EVERYONE) and WHAT(message_id)")
+		return context.Send("Expected 2 arguments: TO(player_name or EVERYONE) and WHAT(message_id)")
 	}
-	playerName := args[0]
+
+	var (
+		playerNames []string
+		err         error
+	)
+
+	if args[0] == "EVERYONE" {
+		playerNames, err = getUserPlayerNames(bot.DB)
+		log.Print("DEBUG ", playerNames)
+		if err != nil {
+			return err
+		}
+	} else {
+		playerNames = append(playerNames, args[0])
+	}
+
 	messageID := args[1]
-
-	user, err := getUserByName(bot.DB, playerName)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return context.Send("Given player name not found")
-		} else {
-			log.Print("Error while searching player by name ", playerName, " ", err)
-			return context.Send("Error occured while searching for given player")
+	for _, playerName := range playerNames {
+		log.Print("DEBUG ", playerName)
+		user, err := getUserByName(bot.DB, playerName)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				context.Send("Given player name not found")
+				continue
+			} else {
+				log.Print("Error while searching player by name ", playerName, " ", err)
+				context.Send("Error occured while searching for given player")
+				continue
+			}
 		}
-	}
 
-	message, err := getMessage(bot.DB, messageID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return context.Send("Given messsage does not registered in the DB")
-		} else {
-			log.Print("Error while searching message by message_id ", messageID, " ", err)
-			return context.Send("Error occured while searching for message to send")
+		message, err := getMessage(bot.DB, messageID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				context.Send("Given messsage does not registered in the DB")
+				continue
+			} else {
+				log.Print("Error while searching message by message_id ", messageID, " ", err)
+				context.Send("Error occured while searching for message to send")
+				continue
+			}
 		}
-	}
 
-	_, err = context.Bot().Copy(user, message)
-	if err != nil {
-		log.Print("Error occured while coping message ", err)
-		return context.Send("Failed to send requested message")
-	}
+		_, err = context.Bot().Copy(user, message)
+		if err != nil {
+			log.Print("Error occured while coping message ", err)
+			context.Send("Failed to send requested message")
+			continue
+		}
 
-	log.Print("Sent message [", messageID, "] to [", playerName, "]")
+		log.Print("Sent message [", messageID, "] to [", playerName, "]")
+	}
 	return nil
 }
 
@@ -108,8 +130,10 @@ func HandleText(context tele.Context, bot *BotData) error {
 	if user == nil {
 		password := os.Getenv("BOT_USER_PASSWORD")
 		if context.Text() == password {
-			_ = registerUser(bot.DB, context)
+			user := registerUser(bot.DB, context)
 			context.Send("Password is correct, welcome!")
+			user.State = UserStateAwaitCodename
+			updateUser(bot.DB, user)
 			return context.Send("Please enter your Player Name")
 		} else {
 			return HandleStartMessage(context, bot)
