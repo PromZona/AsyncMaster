@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"os"
 	"strconv"
@@ -13,49 +14,99 @@ func HandleStartMessage(context tele.Context, bot *BotData) error {
 	return context.Send("Hello, enter password to loging into the System")
 }
 
-func MasterSendMessageToAll(context tele.Context, bot *BotData) error {
-	chatId := context.Chat().ID
-	user := getUser(bot.DB, chatId)
-	if user == nil {
-		return HandleStartMessage(context, bot)
+func RegistrationCheckMiddleware(bot *BotData) tele.MiddlewareFunc {
+	return func(next tele.HandlerFunc) tele.HandlerFunc {
+		return func(context tele.Context) error {
+			chatID := context.Chat().ID
+
+			if !ensureUser(bot.DB, context.Chat().ID) {
+				if _, ok := bot.UserSessionState[chatID]; !ok {
+					bot.UserSessionState[chatID] = UserStateAwaitPassword
+				}
+				return HandleRegisterUser(context, bot)
+			}
+
+			if _, ok := bot.UserSessionState[chatID]; !ok {
+				bot.UserSessionState[chatID] = UserStateDefault
+			}
+			return next(context)
+		}
+	}
+}
+
+func HandleRegisterUser(context tele.Context, bot *BotData) error {
+	chatID := context.Chat().ID
+	state, ok := bot.UserSessionState[chatID]
+	if !ok {
+		state = UserStateAwaitPassword
+		bot.UserSessionState[chatID] = state
 	}
 
-	user.State = UserStateSendingAll
-	updateUser(bot.DB, user)
-	return context.Send("What to send?")
+	switch state {
+	case UserStateAwaitPassword:
+		password := os.Getenv("BOT_USER_PASSWORD")
+		if context.Text() == password {
+			context.Send("Password is correct, welcome!")
+			bot.UserSessionState[chatID] = UserStateAwaitCodename
+			return context.Send("Please enter your Player Name")
+		} else {
+			return HandleStartMessage(context, bot)
+		}
+	case UserStateAwaitCodename:
+		playerName := context.Text()
+		user := &UserData{
+			ChatID:       context.Chat().ID,
+			TelegramName: context.Sender().FirstName,
+			PlayerName:   playerName}
+
+		err := registerUser(bot.DB, user)
+		if err != nil {
+			log.Print("Error while registering user, ", err)
+			return context.Send("Failed to register you, contact administrator")
+		}
+		bot.UserSessionState[chatID] = UserStateDefault
+		return context.Send("Your player name: " + playerName)
+	default:
+		log.Print("Error in handle register, met unexpected User State: ", state)
+		return errors.New("unsupported user state")
+	}
 }
 
 func HandleSave(context tele.Context, bot *BotData) error {
 	chatID := context.Chat().ID
-	user := getUser(bot.DB, chatID)
+	state, ok := bot.UserSessionState[chatID]
+	if !ok {
+		state = UserStateDefault
+		bot.UserSessionState[chatID] = state
+	}
 
-	switch user.State {
+	switch state {
 	case UserStateDefault:
-		user.State = UserStateAwaitSavingMessage
-		updateUser(bot.DB, user)
+		state = UserStateAwaitSavingMessage
+		bot.UserSessionState[chatID] = state
 		return context.Send("Send message that you want to save")
 	case UserStateAwaitSavingMessage:
 		messageID := strconv.FormatInt(int64(context.Message().ID), 10)
 		message := MessageStruct{MessageID: messageID, ChatID: chatID}
 		bot.MessageCache[chatID] = &message
-		user.State = UserStateAwaitTitleForMesssage
-		updateUser(bot.DB, user)
+		state = UserStateAwaitTitleForMesssage
+		bot.UserSessionState[chatID] = state
 		return context.Send("Message received. Give your message a title")
 	case UserStateAwaitTitleForMesssage:
 		message, ok := bot.MessageCache[chatID]
 		if !ok {
 			log.Print("Error while creating message: Message is not found")
+			bot.UserSessionState[chatID] = UserStateDefault
 			return context.Send("Error occured")
 		}
 		title := context.Message().Text
 		message.MessageTitle = title
 		createMessage(bot.DB, message)
 
-		user.State = UserStateDefault
-		updateUser(bot.DB, user)
-		return context.Send("Message has been saved. ID")
+		bot.UserSessionState[chatID] = UserStateDefault
+		return context.Send("Message has been saved")
 	default:
-		log.Print("Error: Met unsupported state while handling Save action: ", user.State)
+		log.Print("Error: Met unsupported state while handling Save action: ", state)
 	}
 
 	return nil
@@ -77,7 +128,6 @@ func HandleSend(context tele.Context, bot *BotData) error {
 
 	if args[0] == "EVERYONE" {
 		playerNames, err = getUserPlayerNames(bot.DB)
-		log.Print("DEBUG ", playerNames)
 		if err != nil {
 			return err
 		}
@@ -87,7 +137,6 @@ func HandleSend(context tele.Context, bot *BotData) error {
 
 	messageID := args[1]
 	for _, playerName := range playerNames {
-		log.Print("DEBUG ", playerName)
 		user, err := getUserByName(bot.DB, playerName)
 		if err != nil {
 			if err == sql.ErrNoRows {
@@ -125,36 +174,12 @@ func HandleSend(context tele.Context, bot *BotData) error {
 }
 
 func HandleText(context tele.Context, bot *BotData) error {
-	id := context.Chat().ID
-	user := getUser(bot.DB, id)
-	if user == nil {
-		password := os.Getenv("BOT_USER_PASSWORD")
-		if context.Text() == password {
-			user := registerUser(bot.DB, context)
-			context.Send("Password is correct, welcome!")
-			user.State = UserStateAwaitCodename
-			updateUser(bot.DB, user)
-			return context.Send("Please enter your Player Name")
-		} else {
-			return HandleStartMessage(context, bot)
-		}
-	}
+	chatID := context.Chat().ID
+	state := bot.UserSessionState[chatID]
 
-	switch user.State {
+	switch state {
 	case UserStateDefault:
-		return context.Send("What do you want from me?")
-	case UserStateAwaitCodename:
-		playerName := context.Text()
-		user.PlayerName = playerName
-		user.State = UserStateDefault
-		updateUser(bot.DB, user)
-		return context.Send("Your player name:" + playerName)
-	case UserStateSendingAll:
-		message := context.Message().Text
-		log.Print(string(message))
-		user.State = UserStateDefault
-		updateUser(bot.DB, user)
-		return context.Send("Thanks")
+		return context.Send("What do you want from me?", bot.PlayerMenu)
 	case UserStateAwaitSavingMessage, UserStateAwaitTitleForMesssage:
 		return HandleSave(context, bot)
 	}

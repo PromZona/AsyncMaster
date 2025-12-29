@@ -5,24 +5,23 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
-	tele "gopkg.in/telebot.v4"
 )
 
-func registerUser(db *sql.DB, context tele.Context) *UserData {
-	log.Print("Register User: ", context.Chat().ID, " ", context.Chat().FirstName)
+func registerUser(db *sql.DB, user *UserData) error {
+	log.Print("Register User: ", user.ChatID, " ", user.TelegramName)
 
-	result, err := db.Exec("insert into users (chat_id, telegram_name) values ($1, $2)", context.Chat().ID, context.Chat().FirstName)
+	result, err := db.Exec("insert into users (chat_id, telegram_name, player_name) values ($1, $2, $3)", user.ChatID, user.TelegramName, user.PlayerName)
 	if err != nil {
 		log.Fatal("Failed to add user to db. ", err)
-		return nil
+		return err
 	}
 	log.Print("DB: added new user ", result)
 
-	return getUser(db, context.Chat().ID)
+	return nil
 }
 
 func updateUser(db *sql.DB, user *UserData) {
-	_, err := db.Exec("UPDATE users SET telegram_name = $1, player_name = $2, state = $3 WHERE chat_id = $4", user.TelegramName, user.PlayerName, user.State, user.ChatID)
+	_, err := db.Exec("UPDATE users SET telegram_name = $1, player_name = $2 WHERE chat_id = $3", user.TelegramName, user.PlayerName, user.ChatID)
 	if err != nil {
 		log.Print("ERROR: while updating user ", user.ChatID, ". ", err)
 	}
@@ -30,8 +29,8 @@ func updateUser(db *sql.DB, user *UserData) {
 
 func getUser(db *sql.DB, chatId int64) *UserData {
 	var newUser UserData
-	queryResult := db.QueryRow("select telegram_name, COALESCE(player_name, '') AS player_name, state, chat_id from users where chat_id = $1", chatId)
-	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.State, &newUser.ChatID)
+	queryResult := db.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id FROM users WHERE chat_id = $1", chatId)
+	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.ChatID)
 	if err != nil {
 		log.Print(err)
 		return nil
@@ -41,8 +40,8 @@ func getUser(db *sql.DB, chatId int64) *UserData {
 
 func getUserByName(db *sql.DB, playerName string) (*UserData, error) {
 	var user UserData
-	queryResult := db.QueryRow("select telegram_name, COALESCE(player_name, '') AS player_name, state, chat_id from users where player_name = $1", playerName)
-	err := queryResult.Scan(&user.TelegramName, &user.PlayerName, &user.State, &user.ChatID)
+	queryResult := db.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id from users where player_name = $1", playerName)
+	err := queryResult.Scan(&user.TelegramName, &user.PlayerName, &user.ChatID)
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -83,15 +82,6 @@ func ensureUser(db *sql.DB, chatId int64) bool {
 	queryResult.Scan(&isExist)
 
 	return isExist
-}
-
-func getOrCreateUser(db *sql.DB, context tele.Context) *UserData {
-	chatId := context.Chat().ID
-	user := getUser(db, chatId)
-	if user == nil {
-		user = registerUser(db, context)
-	}
-	return user
 }
 
 func createMessage(db *sql.DB, message *MessageStruct) {

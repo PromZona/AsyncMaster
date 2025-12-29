@@ -46,12 +46,19 @@ func main() {
 
 	botData := app.BotInit(db)
 
+	b.Use(app.RegistrationCheckMiddleware(botData))
+
 	b.Handle(tele.OnText, func(ctx tele.Context) error { return app.HandleText(ctx, botData) })
 
 	b.Handle("/start", func(ctx tele.Context) error { return app.HandleStartMessage(ctx, botData) })
-	b.Handle("/sendAll", func(ctx tele.Context) error { return app.MasterSendMessageToAll(ctx, botData) })
 	b.Handle("/save", func(ctx tele.Context) error { return app.HandleSave(ctx, botData) })
 	b.Handle("/send", func(ctx tele.Context) error { return app.HandleSend(ctx, botData) })
+
+	b.Handle(&botData.BtnPlayerSend, func(ctx tele.Context) error {
+		ctx.Respond()
+		// return ctx.Respond(&tele.CallbackResponse{Text: "Send receivedddd...."})
+		return app.HandleSend(ctx, botData)
+	})
 
 	b.Start()
 }

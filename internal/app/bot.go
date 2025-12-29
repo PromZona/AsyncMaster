@@ -15,22 +15,21 @@ const (
 	UserStateDefault UserState = 0
 
 	// Registration Phase
-	UserStateAwaitCodename = 1
+	UserStateAwaitPassword = 100
+	UserStateAwaitCodename = 101
 
 	// Master Commands
-	UserStateSendingAll            = 2
-	UserStateAwaitSavingMessage    = 3
-	UserStateAwaitTitleForMesssage = 4
+	UserStateAwaitSavingMessage    = 200
+	UserStateAwaitTitleForMesssage = 201
 
 	// Player Commands
 
 )
 
 type UserData struct {
-	ChatID       tele.ChatID
+	ChatID       int64
 	TelegramName string
 	PlayerName   string
-	State        UserState
 }
 
 func (user *UserData) Recipient() string {
@@ -38,16 +37,32 @@ func (user *UserData) Recipient() string {
 }
 
 type BotData struct {
-	DB           *sql.DB
-	MessageCache map[int64]*MessageStruct
+	DB                    *sql.DB
+	UserSessionState      map[int64]UserState
+	MessageCache          map[int64]*MessageStruct
+	UserRegistrationCache map[int64]*UserData
+
+	//Player Menu Data
+	PlayerMenu    *tele.ReplyMarkup
+	BtnPlayerSend tele.Btn
 }
 
 func BotInit(db *sql.DB) *BotData {
-	bot := BotData{
-		DB:           db,
-		MessageCache: make(map[int64]*MessageStruct),
+	bot := &BotData{
+		DB:                    db,
+		UserSessionState:      make(map[int64]UserState),
+		MessageCache:          make(map[int64]*MessageStruct),
+		UserRegistrationCache: make(map[int64]*UserData),
+		PlayerMenu:            &tele.ReplyMarkup{},
 	}
-	return &bot
+
+	bot.BtnPlayerSend = bot.PlayerMenu.Data("Send To Player", "send")
+
+	bot.PlayerMenu.Inline(
+		bot.PlayerMenu.Row(bot.BtnPlayerSend),
+	)
+
+	return bot
 }
 
 type MessageStruct struct {
