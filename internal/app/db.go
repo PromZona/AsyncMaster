@@ -76,6 +76,31 @@ func getUserPlayerNames(db *sql.DB) ([]string, error) {
 	return result, nil
 }
 
+func getUserPlayerNamesAndChatID(db *sql.DB) (names []string, chatIDs []int64, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT player_name, chat_id FROM users")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name string
+		var chatID int64
+		err = rows.Scan(&name, &chatID)
+		if err != nil {
+			return nil, nil, err
+		}
+		names = append(names, name)
+		chatIDs = append(chatIDs, chatID)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return names, chatIDs, nil
+}
+
 func ensureUser(db *sql.DB, chatId int64) bool {
 	var isExist bool
 	queryResult := db.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE chat_id = $1)", chatId)
@@ -84,7 +109,7 @@ func ensureUser(db *sql.DB, chatId int64) bool {
 	return isExist
 }
 
-func createMessage(db *sql.DB, message *MessageStruct) {
+func createMessage(db *sql.DB, message *Message) {
 	result, err := db.Exec("insert into messages (chat_id, message_id, message_title) values ($1, $2, $3)", message.ChatID, message.MessageID, message.MessageTitle)
 	if err != nil {
 		log.Print("Error whule creating Message: ", err)
@@ -93,8 +118,8 @@ func createMessage(db *sql.DB, message *MessageStruct) {
 	log.Print("Created new Message: ", result)
 }
 
-func getMessage(db *sql.DB, messageID string) (*MessageStruct, error) {
-	var message MessageStruct
+func getMessage(db *sql.DB, messageID string) (*Message, error) {
+	var message Message
 	queryResult := db.QueryRow("SELECT chat_id, message_title, message_id FROM messages WHERE message_id = $1", messageID)
 	err := queryResult.Scan(&message.ChatID, &message.MessageTitle, &message.MessageID)
 	if err != nil {

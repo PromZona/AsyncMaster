@@ -3,6 +3,8 @@ package app
 import (
 	"database/sql"
 	"strconv"
+	"strings"
+	"time"
 
 	_ "github.com/lib/pq"
 	tele "gopkg.in/telebot.v4"
@@ -23,7 +25,8 @@ const (
 	UserStateAwaitTitleForMesssage = 201
 
 	// Player Commands
-
+	UserStateAwaitResipient = 300
+	UserStateAwaitMessage   = 301
 )
 
 type UserData struct {
@@ -37,10 +40,11 @@ func (user *UserData) Recipient() string {
 }
 
 type BotData struct {
-	DB                    *sql.DB
-	UserSessionState      map[int64]UserState
-	MessageCache          map[int64]*MessageStruct
-	UserRegistrationCache map[int64]*UserData
+	DB                      *sql.DB
+	UserSessionState        map[int64]UserState
+	MessageCache            map[int64]*Message
+	MessageTransactionCache map[int64]*MessageTransaction
+	UserRegistrationCache   map[int64]*UserData
 
 	//Player Menu Data
 	PlayerMenu    *tele.ReplyMarkup
@@ -49,11 +53,12 @@ type BotData struct {
 
 func BotInit(db *sql.DB) *BotData {
 	bot := &BotData{
-		DB:                    db,
-		UserSessionState:      make(map[int64]UserState),
-		MessageCache:          make(map[int64]*MessageStruct),
-		UserRegistrationCache: make(map[int64]*UserData),
-		PlayerMenu:            &tele.ReplyMarkup{},
+		DB:                      db,
+		UserSessionState:        make(map[int64]UserState),
+		MessageCache:            make(map[int64]*Message),
+		MessageTransactionCache: make(map[int64]*MessageTransaction),
+		UserRegistrationCache:   make(map[int64]*UserData),
+		PlayerMenu:              &tele.ReplyMarkup{},
 	}
 
 	bot.BtnPlayerSend = bot.PlayerMenu.Data("Send To Player", "send")
@@ -65,17 +70,40 @@ func BotInit(db *sql.DB) *BotData {
 	return bot
 }
 
-type MessageStruct struct {
+type Message struct {
 	ID           int
 	MessageTitle string
 	MessageID    string
-	ChatID       int64
+	ChatID       int64 // from which chat to copy
 }
 
-func (msg MessageStruct) MessageSig() (string, int64) {
+func (msg Message) MessageSig() (string, int64) {
 	return msg.MessageID, msg.ChatID
 }
 
-func (msg MessageStruct) MessageHash() string {
-	return msg.MessageID + string(msg.ChatID)
+func (msg Message) MessageHash() string {
+	return msg.MessageID + strconv.FormatInt(msg.ChatID, 10)
+}
+
+type MessageTransaction struct {
+	ID        int
+	Timestamp time.Time
+	From      tele.ChatID
+	To        tele.ChatID
+
+	MessageID int // FK column
+	Message   *Message
+}
+
+func parseCallbackDataString(callbackData string) (unique, data string) {
+	trimmed := strings.Trim(callbackData, "\f")
+	parts := strings.SplitN(trimmed, "|", 2)
+	count := len(parts)
+	if count == 2 {
+		return parts[0], parts[1]
+	}
+	if count == 1 {
+		return parts[0], ""
+	}
+	return "", ""
 }

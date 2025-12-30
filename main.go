@@ -46,6 +46,7 @@ func main() {
 
 	botData := app.BotInit(db)
 
+	b.Use(app.ErrorRecoveryMiddleware(botData))
 	b.Use(app.RegistrationCheckMiddleware(botData))
 
 	b.Handle(tele.OnText, func(ctx tele.Context) error { return app.HandleText(ctx, botData) })
@@ -54,10 +55,8 @@ func main() {
 	b.Handle("/save", func(ctx tele.Context) error { return app.HandleSave(ctx, botData) })
 	b.Handle("/send", func(ctx tele.Context) error { return app.HandleSend(ctx, botData) })
 
-	b.Handle(&botData.BtnPlayerSend, func(ctx tele.Context) error {
-		ctx.Respond()
-		// return ctx.Respond(&tele.CallbackResponse{Text: "Send receivedddd...."})
-		return app.HandleSend(ctx, botData)
+	b.Handle(tele.OnCallback, func(ctx tele.Context) error {
+		return app.HandleCallbacks(ctx, botData)
 	})
 
 	b.Start()
