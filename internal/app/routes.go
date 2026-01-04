@@ -16,6 +16,10 @@ func HandleStartMessage(context tele.Context, bot *BotData) error {
 	return context.Send("Hello, enter password to loging into the System")
 }
 
+func SendMainMenu(context tele.Context, bot *BotData) error {
+	return context.Send("Main menu", bot.PlayerMenu)
+}
+
 func RegistrationCheckMiddleware(bot *BotData) tele.MiddlewareFunc {
 	return func(next tele.HandlerFunc) tele.HandlerFunc {
 		return func(context tele.Context) error {
@@ -195,55 +199,80 @@ func HandleText(context tele.Context, bot *BotData) error {
 
 	switch state {
 	case UserStateDefault:
-		return context.Send("What do you want from me?", bot.PlayerMenu)
+		return SendMainMenu(context, bot)
 	case UserStateAwaitSavingMessage, UserStateAwaitTitleForMesssage:
 		return HandleSave(context, bot)
 	case UserStateAwaitMessage:
-		transaction, ok := bot.MessageTransactionCache[chatID]
-		if !ok {
-			return fmt.Errorf("expected transaction message to exist while handling UserStateAwaitMessage state")
-		}
+		return handlePlayerMessage(context, bot)
+	case UserStateAwaitTitle:
+		bot.MessageCache[chatID].MessageTitle = context.Message().Text
+		return handlePlayerFinalMessageSending(context, bot)
 
-		message := &Message{
-			MessageTitle: "",
-			MessageID:    strconv.FormatInt(int64(context.Message().ID), 10),
-			ChatID:       chatID,
-		}
-
-		tx, err := bot.DB.Begin()
-		if err != nil {
-			return err
-		}
-
-		message, err = createMessage(tx, message)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
-		transaction.Message = message
-		transaction, err = createTransaction(tx, transaction)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
-		err = tx.Commit()
-		if err != nil {
-			return err
-		}
-
-		context.Bot().Copy(transaction.To, transaction.Message)
-
-		bot.UserSessionState[chatID] = UserStateDefault
-		bot.MessageTransactionCache[chatID] = nil
-		bot.MessageCache[chatID] = nil
-		return context.Send("Message sent")
 	}
 	return nil
 }
 
-func GetPlayerNamesKeyboard(bot *BotData) *tele.ReplyMarkup {
+func handlePlayerMessage(context tele.Context, bot *BotData) error {
+	chatID := context.Chat().ID
+
+	message := &Message{
+		MessageTitle: "",
+		MessageID:    strconv.FormatInt(int64(context.Message().ID), 10),
+		ChatID:       chatID,
+	}
+
+	bot.MessageCache[chatID] = message
+	bot.UserSessionState[chatID] = UserStateAwaitTitleDecision
+
+	return context.Send("Do you want to add title for a message?", getTitleQuestionKeyboard())
+}
+
+func handlePlayerFinalMessageSending(context tele.Context, bot *BotData) error {
+	chatID := context.Chat().ID
+
+	transaction, ok := bot.MessageTransactionCache[chatID]
+	if !ok {
+		return fmt.Errorf("expected transaction message to exist while handling UserStateAwaitMessage state")
+	}
+
+	message, ok := bot.MessageCache[chatID]
+	if !ok {
+		return fmt.Errorf("expected message to exist while handling UserStateAwaitMessage state")
+	}
+
+	tx, err := bot.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	message, err = createMessage(tx, message)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	transaction.Message = message
+	transaction, err = createTransaction(tx, transaction)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	context.Bot().Copy(transaction.To, transaction.Message)
+
+	bot.UserSessionState[chatID] = UserStateDefault
+	bot.ClearUserCache(chatID)
+
+	context.Send("Message sent")
+	return SendMainMenu(context, bot)
+}
+
+func getPlayerNamesKeyboard(bot *BotData) *tele.ReplyMarkup {
 	result := &tele.ReplyMarkup{}
 
 	playerNames, chatIDs, err := getUserPlayerNamesAndChatID(bot.DB)
@@ -270,6 +299,19 @@ func GetPlayerNamesKeyboard(bot *BotData) *tele.ReplyMarkup {
 	return result
 }
 
+func getTitleQuestionKeyboard() *tele.ReplyMarkup {
+	result := &tele.ReplyMarkup{}
+
+	btnNo := result.Data("No", "no_title")
+	btnYes := result.Data("Yes", "yes_title")
+
+	result.Inline(
+		result.Row(btnNo, btnYes),
+	)
+
+	return result
+}
+
 func HandleCallbacks(context tele.Context, bot *BotData) error {
 	context.Respond()
 
@@ -279,9 +321,9 @@ func HandleCallbacks(context tele.Context, bot *BotData) error {
 	rawCallbackData := context.Callback().Data
 	cbUnique, cbData := parseCallbackDataString(rawCallbackData)
 
-	log.Printf("callback unique   = %q", cbUnique)
-	log.Printf("callback data     = %q", cbData)
-	log.Printf("raw callback data = %q", rawCallbackData)
+	// log.Printf("callback unique   = %q", cbUnique)
+	// log.Printf("callback data     = %q", cbData)
+	// log.Printf("raw callback data = %q", rawCallbackData)
 
 	switch cbUnique {
 	case "send":
@@ -292,7 +334,7 @@ func HandleCallbacks(context tele.Context, bot *BotData) error {
 		bot.MessageTransactionCache[chatID] = &MessageTransaction{
 			From: tele.ChatID(chatID),
 		}
-		return context.Send("Names:", GetPlayerNamesKeyboard(bot))
+		return context.Send("Names:", getPlayerNamesKeyboard(bot))
 	case "player_names":
 		if state != UserStateAwaitResipient {
 			return context.Send("This button is not available right now, please finish your previous action")
@@ -316,6 +358,17 @@ func HandleCallbacks(context tele.Context, bot *BotData) error {
 		transaction.To = tele.ChatID(toChatID)
 		bot.UserSessionState[chatID] = UserStateAwaitMessage
 		return context.Send("Write your message:")
+	case "no_title":
+		if state != UserStateAwaitTitleDecision {
+			return context.Send("This button is not available right now, please finish your previous action")
+		}
+		return handlePlayerFinalMessageSending(context, bot)
+	case "yes_title":
+		if state != UserStateAwaitTitleDecision {
+			return context.Send("This button is not available right now, please finish your previous action")
+		}
+		bot.UserSessionState[chatID] = UserStateAwaitTitle
+		return context.Send("Write title for your message:")
 	default:
 		log.Print("Error, met unknown state while receiving callback, ", state)
 		return errors.New("unsupported state in callback")

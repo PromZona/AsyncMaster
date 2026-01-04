@@ -25,8 +25,10 @@ const (
 	UserStateAwaitTitleForMesssage = 201
 
 	// Player Commands
-	UserStateAwaitResipient = 300
-	UserStateAwaitMessage   = 301
+	UserStateAwaitResipient     = 300
+	UserStateAwaitMessage       = 301
+	UserStateAwaitTitleDecision = 302
+	UserStateAwaitTitle         = 303
 )
 
 type UserData struct {
@@ -68,6 +70,12 @@ func BotInit(db *sql.DB) *BotData {
 	)
 
 	return bot
+}
+
+func (b *BotData) ClearUserCache(chatID int64) {
+	delete(b.MessageCache, chatID)
+	delete(b.MessageTransactionCache, chatID)
+	delete(b.UserRegistrationCache, chatID)
 }
 
 type Message struct {
