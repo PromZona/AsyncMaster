@@ -7,12 +7,18 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func registerUser(db *sql.DB, user *UserData) error {
+type DBExecutor interface {
+	Exec(query string, args ...any) (sql.Result, error)
+	QueryRow(query string, args ...any) *sql.Row
+	Query(query string, args ...any) (*sql.Rows, error)
+}
+
+func registerUser(e DBExecutor, user *UserData) error {
 	log.Print("Register User: ", user.ChatID, " ", user.TelegramName)
 
-	result, err := db.Exec("insert into users (chat_id, telegram_name, player_name) values ($1, $2, $3)", user.ChatID, user.TelegramName, user.PlayerName)
+	result, err := e.Exec("insert into users (chat_id, telegram_name, player_name) values ($1, $2, $3)", user.ChatID, user.TelegramName, user.PlayerName)
 	if err != nil {
-		log.Fatal("Failed to add user to db. ", err)
+		log.Fatal("Failed to add user to database ", err)
 		return err
 	}
 	log.Print("DB: added new user ", result)
@@ -20,16 +26,16 @@ func registerUser(db *sql.DB, user *UserData) error {
 	return nil
 }
 
-func updateUser(db *sql.DB, user *UserData) {
-	_, err := db.Exec("UPDATE users SET telegram_name = $1, player_name = $2 WHERE chat_id = $3", user.TelegramName, user.PlayerName, user.ChatID)
+func updateUser(e DBExecutor, user *UserData) {
+	_, err := e.Exec("UPDATE users SET telegram_name = $1, player_name = $2 WHERE chat_id = $3", user.TelegramName, user.PlayerName, user.ChatID)
 	if err != nil {
 		log.Print("ERROR: while updating user ", user.ChatID, ". ", err)
 	}
 }
 
-func getUser(db *sql.DB, chatId int64) *UserData {
+func getUser(e DBExecutor, chatId int64) *UserData {
 	var newUser UserData
-	queryResult := db.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id FROM users WHERE chat_id = $1", chatId)
+	queryResult := e.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id FROM users WHERE chat_id = $1", chatId)
 	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.ChatID)
 	if err != nil {
 		log.Print(err)
@@ -38,9 +44,9 @@ func getUser(db *sql.DB, chatId int64) *UserData {
 	return &newUser
 }
 
-func getUserByName(db *sql.DB, playerName string) (*UserData, error) {
+func getUserByName(e DBExecutor, playerName string) (*UserData, error) {
 	var user UserData
-	queryResult := db.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id from users where player_name = $1", playerName)
+	queryResult := e.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id from users where player_name = $1", playerName)
 	err := queryResult.Scan(&user.TelegramName, &user.PlayerName, &user.ChatID)
 	if err != nil {
 		log.Print(err)
@@ -49,9 +55,9 @@ func getUserByName(db *sql.DB, playerName string) (*UserData, error) {
 	return &user, nil
 }
 
-func getUserPlayerNames(db *sql.DB) ([]string, error) {
+func getUserPlayerNames(e DBExecutor) ([]string, error) {
 	var result []string
-	rows, err := db.Query("SELECT player_name FROM users")
+	rows, err := e.Query("SELECT player_name FROM users")
 	if err != nil {
 		log.Print(err)
 		return nil, err
@@ -76,9 +82,9 @@ func getUserPlayerNames(db *sql.DB) ([]string, error) {
 	return result, nil
 }
 
-func getUserPlayerNamesAndChatID(db *sql.DB) (names []string, chatIDs []int64, err error) {
+func getUserPlayerNamesAndChatID(e DBExecutor) (names []string, chatIDs []int64, err error) {
 	var rows *sql.Rows
-	rows, err = db.Query("SELECT player_name, chat_id FROM users")
+	rows, err = e.Query("SELECT player_name, chat_id FROM users")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -101,26 +107,27 @@ func getUserPlayerNamesAndChatID(db *sql.DB) (names []string, chatIDs []int64, e
 	return names, chatIDs, nil
 }
 
-func ensureUser(db *sql.DB, chatId int64) bool {
+func ensureUser(e DBExecutor, chatId int64) bool {
 	var isExist bool
-	queryResult := db.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE chat_id = $1)", chatId)
+	queryResult := e.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE chat_id = $1)", chatId)
 	queryResult.Scan(&isExist)
 
 	return isExist
 }
 
-func createMessage(db *sql.DB, message *Message) {
-	result, err := db.Exec("insert into messages (chat_id, message_id, message_title) values ($1, $2, $3)", message.ChatID, message.MessageID, message.MessageTitle)
+func createMessage(e DBExecutor, message *Message) (*Message, error) {
+	err := e.QueryRow("INSERT INTO messages (chat_id, message_id, message_title) values ($1, $2, $3) RETURNING id",
+		message.ChatID, message.MessageID, message.MessageTitle).
+		Scan(&message.ID)
 	if err != nil {
-		log.Print("Error whule creating Message: ", err)
-		return
+		return nil, err
 	}
-	log.Print("Created new Message: ", result)
+	return message, nil
 }
 
-func getMessage(db *sql.DB, messageID string) (*Message, error) {
+func getMessage(e DBExecutor, messageID string) (*Message, error) {
 	var message Message
-	queryResult := db.QueryRow("SELECT chat_id, message_title, message_id FROM messages WHERE message_id = $1", messageID)
+	queryResult := e.QueryRow("SELECT chat_id, message_title, message_id FROM messages WHERE message_id = $1", messageID)
 	err := queryResult.Scan(&message.ChatID, &message.MessageTitle, &message.MessageID)
 	if err != nil {
 		log.Print(err)
@@ -134,5 +141,28 @@ func updateMessage() {
 }
 
 func deleteMessage() {
+
+}
+
+func createTransaction(e DBExecutor, transaction *MessageTransaction) (*MessageTransaction, error) {
+	err := e.QueryRow("INSERT INTO message_transaction (from_chat, to_chat, message_id) VALUES ($1, $2, $3) RETURNING id, created_at",
+		transaction.From, transaction.To, transaction.Message.ID).
+		Scan(&transaction.ID, &transaction.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+	return transaction, nil
+}
+
+func getTransaction() {
+
+}
+
+func updateTransaction() {
+
+}
+
+func deleteTransaction() {
 
 }

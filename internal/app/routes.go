@@ -204,15 +204,41 @@ func HandleText(context tele.Context, bot *BotData) error {
 			return fmt.Errorf("expected transaction message to exist while handling UserStateAwaitMessage state")
 		}
 
-		fill all fields left un-filled
-		create message
-		write message to db
-		create transaction
-		write transaction to db
-	
-		
+		message := &Message{
+			MessageTitle: "",
+			MessageID:    strconv.FormatInt(int64(context.Message().ID), 10),
+			ChatID:       chatID,
+		}
 
-		return context.Send("Thanks")
+		tx, err := bot.DB.Begin()
+		if err != nil {
+			return err
+		}
+
+		message, err = createMessage(tx, message)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		transaction.Message = message
+		transaction, err = createTransaction(tx, transaction)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return err
+		}
+
+		context.Bot().Copy(transaction.To, transaction.Message)
+
+		bot.UserSessionState[chatID] = UserStateDefault
+		bot.MessageTransactionCache[chatID] = nil
+		bot.MessageCache[chatID] = nil
+		return context.Send("Message sent")
 	}
 	return nil
 }

@@ -87,12 +87,11 @@ func (msg Message) MessageHash() string {
 
 type MessageTransaction struct {
 	ID        int
-	Timestamp time.Time
+	CreatedAt time.Time
 	From      tele.ChatID
 	To        tele.ChatID
 
-	MessageID int // FK column
-	Message   *Message
+	Message *Message
 }
 
 func parseCallbackDataString(callbackData string) (unique, data string) {
