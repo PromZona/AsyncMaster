@@ -77,7 +77,9 @@ func HandleRegisterUser(context tele.Context, bot *BotData) error {
 		user := &UserData{
 			ChatID:       context.Chat().ID,
 			TelegramName: context.Sender().FirstName,
-			PlayerName:   playerName}
+			PlayerName:   playerName,
+			Role:         RolePlayer,
+		}
 
 		err := registerUser(bot.DB, user)
 		if err != nil {
@@ -191,6 +193,31 @@ func HandleSend(context tele.Context, bot *BotData) error {
 		log.Print("Sent message [", messageID, "] to [", playerName, "]")
 	}
 	return nil
+}
+
+func HandleElevateToMaster(context tele.Context, bot *BotData) error {
+	args := context.Args()
+	chatID := context.Chat().ID
+	state := bot.UserSessionState[chatID]
+
+	if state != UserStateDefault {
+		return context.Send("Please finish previous action to activate this command")
+	}
+
+	if len(args) < 1 {
+		return context.Send("Not enough arguments received. Send a password as argument for a command")
+	}
+
+	password := os.Getenv("BOT_MASTER_PASSWORD")
+	if password != args[0] {
+		return context.Send("Password is incorrect")
+	}
+
+	user := getUser(bot.DB, chatID)
+	user.Role = RoleMaster
+	updateUser(bot.DB, user)
+
+	return context.Send("Role updated to Master")
 }
 
 func HandleText(context tele.Context, bot *BotData) error {

@@ -31,10 +31,18 @@ const (
 	UserStateAwaitTitle         = 303
 )
 
+type UserRole int
+
+const (
+	RolePlayer UserRole = 0
+	RoleMaster          = 1
+)
+
 type UserData struct {
 	ChatID       int64
 	TelegramName string
 	PlayerName   string
+	Role         UserRole
 }
 
 func (user *UserData) Recipient() string {
@@ -122,4 +130,11 @@ func parseCallbackDataString(callbackData string) (unique, data string) {
 		return parts[0], ""
 	}
 	return "", ""
+}
+
+type MasterRequest struct {
+	ID           int
+	CreatedAt    time.Time
+	TextRequest  string
+	TextResponse string
 }

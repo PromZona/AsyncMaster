@@ -54,6 +54,7 @@ func main() {
 	b.Handle("/start", func(ctx tele.Context) error { return app.HandleStartMessage(ctx, botData) })
 	b.Handle("/save", func(ctx tele.Context) error { return app.HandleSave(ctx, botData) })
 	b.Handle("/send", func(ctx tele.Context) error { return app.HandleSend(ctx, botData) })
+	b.Handle("/elevate", func(ctx tele.Context) error { return app.HandleElevateToMaster(ctx, botData) })
 
 	b.Handle(&botData.BtnCancel, func(ctx tele.Context) error {
 		ctx.Respond()

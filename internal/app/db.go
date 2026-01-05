@@ -16,7 +16,11 @@ type DBExecutor interface {
 func registerUser(e DBExecutor, user *UserData) error {
 	log.Print("Register User: ", user.ChatID, " ", user.TelegramName)
 
-	result, err := e.Exec("insert into users (chat_id, telegram_name, player_name) values ($1, $2, $3)", user.ChatID, user.TelegramName, user.PlayerName)
+	result, err := e.Exec("insert into users (chat_id, telegram_name, player_name, role) values ($1, $2, $3, $4)",
+		user.ChatID,
+		user.TelegramName,
+		user.PlayerName,
+		user.Role)
 	if err != nil {
 		log.Fatal("Failed to add user to database ", err)
 		return err
@@ -27,7 +31,11 @@ func registerUser(e DBExecutor, user *UserData) error {
 }
 
 func updateUser(e DBExecutor, user *UserData) {
-	_, err := e.Exec("UPDATE users SET telegram_name = $1, player_name = $2 WHERE chat_id = $3", user.TelegramName, user.PlayerName, user.ChatID)
+	_, err := e.Exec("UPDATE users SET telegram_name = $1, player_name = $2, role = $3 WHERE chat_id = $4",
+		user.TelegramName,
+		user.PlayerName,
+		user.Role,
+		user.ChatID)
 	if err != nil {
 		log.Print("ERROR: while updating user ", user.ChatID, ". ", err)
 	}
@@ -166,3 +174,5 @@ func updateTransaction() {
 func deleteTransaction() {
 
 }
+
+// func createMasterRequest(e DBExecutor, ...)
