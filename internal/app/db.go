@@ -41,10 +41,10 @@ func updateUser(e DBExecutor, user *UserData) {
 	}
 }
 
-func getUser(e DBExecutor, chatId int64) *UserData {
+func getUser(e DBExecutor, chatID int64) *UserData {
 	var newUser UserData
-	queryResult := e.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id FROM users WHERE chat_id = $1", chatId)
-	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.ChatID)
+	queryResult := e.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id, role FROM users WHERE chat_id = $1", chatID)
+	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.ChatID, &newUser.Role)
 	if err != nil {
 		log.Print(err)
 		return nil

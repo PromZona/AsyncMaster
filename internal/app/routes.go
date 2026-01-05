@@ -17,7 +17,14 @@ func HandleStartMessage(context tele.Context, bot *BotData) error {
 }
 
 func SendMainMenu(context tele.Context, bot *BotData) error {
-	return context.Send("Main menu", bot.PlayerMenu)
+	user := getUser(bot.DB, context.Chat().ID)
+	var menu *tele.ReplyMarkup
+	if user.Role == RoleMaster {
+		menu = bot.MasterMenu
+	} else {
+		menu = bot.PlayerMenu
+	}
+	return context.Send("Main menu", menu)
 }
 
 func RegistrationCheckMiddleware(bot *BotData) tele.MiddlewareFunc {

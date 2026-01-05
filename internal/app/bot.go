@@ -35,7 +35,7 @@ type UserRole int
 
 const (
 	RolePlayer UserRole = 0
-	RoleMaster          = 1
+	RoleMaster UserRole = 1
 )
 
 type UserData struct {
@@ -56,12 +56,9 @@ type BotData struct {
 	MessageTransactionCache map[int64]*MessageTransaction
 	UserRegistrationCache   map[int64]*UserData
 
-	// Player Menu Data
-	PlayerMenu    *tele.ReplyMarkup
-	BtnPlayerSend tele.Btn
-
-	// Common Menu Buttons
-	BtnCancel tele.Btn
+	PlayerMenu *tele.ReplyMarkup
+	MasterMenu *tele.ReplyMarkup
+	BtnCancel  tele.Btn
 }
 
 func BotInit(db *sql.DB) *BotData {
@@ -72,14 +69,23 @@ func BotInit(db *sql.DB) *BotData {
 		MessageTransactionCache: make(map[int64]*MessageTransaction),
 		UserRegistrationCache:   make(map[int64]*UserData),
 		PlayerMenu:              &tele.ReplyMarkup{},
+		MasterMenu:              &tele.ReplyMarkup{},
 	}
 
-	bot.BtnPlayerSend = bot.PlayerMenu.Data("Send To Player", "send")
-
+	// Player Menu Init
+	btnSend := bot.PlayerMenu.Data("Send To Player", "send")
 	bot.PlayerMenu.Inline(
-		bot.PlayerMenu.Row(bot.BtnPlayerSend),
+		bot.PlayerMenu.Row(btnSend),
 	)
 
+	// Master Menu Init
+	btnSendMasters := bot.MasterMenu.Data("Send To Player", "send")
+	btnMasterRequest := bot.MasterMenu.Data("Master Request", "master_request")
+	bot.MasterMenu.Inline(
+		bot.MasterMenu.Row(btnSendMasters, btnMasterRequest),
+	)
+
+	// Cancel Button Init
 	bot.BtnCancel = tele.Btn{
 		Unique: "cancel",
 		Text:   "Cancel",
