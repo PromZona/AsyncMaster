@@ -55,6 +55,13 @@ func main() {
 	b.Handle("/save", func(ctx tele.Context) error { return app.HandleSave(ctx, botData) })
 	b.Handle("/send", func(ctx tele.Context) error { return app.HandleSend(ctx, botData) })
 
+	b.Handle(&botData.BtnCancel, func(ctx tele.Context) error {
+		ctx.Respond()
+		chatID := ctx.Chat().ID
+		botData.ClearUserCache(chatID)
+		botData.UserSessionState[chatID] = app.UserStateDefault
+		return app.SendMainMenu(ctx, botData)
+	})
 	b.Handle(tele.OnCallback, func(ctx tele.Context) error {
 		return app.HandleCallbacks(ctx, botData)
 	})

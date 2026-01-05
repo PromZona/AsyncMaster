@@ -224,7 +224,7 @@ func handlePlayerMessage(context tele.Context, bot *BotData) error {
 	bot.MessageCache[chatID] = message
 	bot.UserSessionState[chatID] = UserStateAwaitTitleDecision
 
-	return context.Send("Do you want to add title for a message?", getTitleQuestionKeyboard())
+	return context.Send("Do you want to add title for a message?", getTitleQuestionKeyboard(bot))
 }
 
 func handlePlayerFinalMessageSending(context tele.Context, bot *BotData) error {
@@ -294,12 +294,13 @@ func getPlayerNamesKeyboard(bot *BotData) *tele.ReplyMarkup {
 
 	result.Inline(
 		result.Row(btnPlayerNames...),
+		result.Row(bot.BtnCancel),
 	)
 
 	return result
 }
 
-func getTitleQuestionKeyboard() *tele.ReplyMarkup {
+func getTitleQuestionKeyboard(bot *BotData) *tele.ReplyMarkup {
 	result := &tele.ReplyMarkup{}
 
 	btnNo := result.Data("No", "no_title")
@@ -307,6 +308,7 @@ func getTitleQuestionKeyboard() *tele.ReplyMarkup {
 
 	result.Inline(
 		result.Row(btnNo, btnYes),
+		result.Row(bot.BtnCancel),
 	)
 
 	return result

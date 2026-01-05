@@ -48,9 +48,12 @@ type BotData struct {
 	MessageTransactionCache map[int64]*MessageTransaction
 	UserRegistrationCache   map[int64]*UserData
 
-	//Player Menu Data
+	// Player Menu Data
 	PlayerMenu    *tele.ReplyMarkup
 	BtnPlayerSend tele.Btn
+
+	// Common Menu Buttons
+	BtnCancel tele.Btn
 }
 
 func BotInit(db *sql.DB) *BotData {
@@ -68,6 +71,11 @@ func BotInit(db *sql.DB) *BotData {
 	bot.PlayerMenu.Inline(
 		bot.PlayerMenu.Row(bot.BtnPlayerSend),
 	)
+
+	bot.BtnCancel = tele.Btn{
+		Unique: "cancel",
+		Text:   "Cancel",
+	}
 
 	return bot
 }
