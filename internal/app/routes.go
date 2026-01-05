@@ -275,6 +275,8 @@ func handlePlayerFinalMessageSending(context tele.Context, bot *BotData) error {
 
 	context.Bot().Send(transaction.To, formatedMessage)
 
+	log.Printf("Player send message succesfully, transaction id: %d", transaction.ID)
+
 	bot.UserSessionState[chatID] = UserStateDefault
 	bot.ClearUserCache(chatID)
 
