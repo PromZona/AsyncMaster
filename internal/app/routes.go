@@ -120,7 +120,7 @@ func HandleSave(context tele.Context, bot *BotData) error {
 			return context.Send("Error occured")
 		}
 		title := context.Message().Text
-		message.MessageTitle = title
+		message.Title = title
 		createMessage(bot.DB, message)
 
 		bot.UserSessionState[chatID] = UserStateDefault
@@ -205,7 +205,7 @@ func HandleText(context tele.Context, bot *BotData) error {
 	case UserStateAwaitMessage:
 		return handlePlayerMessage(context, bot)
 	case UserStateAwaitTitle:
-		bot.MessageCache[chatID].MessageTitle = context.Message().Text
+		bot.MessageCache[chatID].Title = context.Message().Text
 		return handlePlayerFinalMessageSending(context, bot)
 
 	}
@@ -216,9 +216,10 @@ func handlePlayerMessage(context tele.Context, bot *BotData) error {
 	chatID := context.Chat().ID
 
 	message := &Message{
-		MessageTitle: "",
-		MessageID:    strconv.FormatInt(int64(context.Message().ID), 10),
-		ChatID:       chatID,
+		Title:     "",
+		MessageID: strconv.FormatInt(int64(context.Message().ID), 10),
+		ChatID:    chatID,
+		Text:      context.Text(),
 	}
 
 	bot.MessageCache[chatID] = message
@@ -263,7 +264,16 @@ func handlePlayerFinalMessageSending(context tele.Context, bot *BotData) error {
 		return err
 	}
 
-	context.Bot().Copy(transaction.To, transaction.Message)
+	messageFromPlayerName := getUser(bot.DB, int64(transaction.From)).PlayerName
+	messageToPlayerName := getUser(bot.DB, int64(transaction.To)).PlayerName
+
+	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\nTo: %s\n\n %s",
+		message.Title,
+		messageFromPlayerName,
+		messageToPlayerName,
+		message.Text)
+
+	context.Bot().Send(transaction.To, formatedMessage)
 
 	bot.UserSessionState[chatID] = UserStateDefault
 	bot.ClearUserCache(chatID)

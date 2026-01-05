@@ -87,10 +87,11 @@ func (b *BotData) ClearUserCache(chatID int64) {
 }
 
 type Message struct {
-	ID           int
-	MessageTitle string
-	MessageID    string
-	ChatID       int64 // from which chat to copy
+	ID        int
+	Title     string
+	MessageID string
+	ChatID    int64 // from which chat to copy
+	Text      string
 }
 
 func (msg Message) MessageSig() (string, int64) {

@@ -116,8 +116,8 @@ func ensureUser(e DBExecutor, chatId int64) bool {
 }
 
 func createMessage(e DBExecutor, message *Message) (*Message, error) {
-	err := e.QueryRow("INSERT INTO messages (chat_id, message_id, message_title) values ($1, $2, $3) RETURNING id",
-		message.ChatID, message.MessageID, message.MessageTitle).
+	err := e.QueryRow("INSERT INTO messages (chat_id, message_id, message_title, message_text) values ($1, $2, $3, $4) RETURNING id",
+		message.ChatID, message.MessageID, message.Title, message.Text).
 		Scan(&message.ID)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func createMessage(e DBExecutor, message *Message) (*Message, error) {
 func getMessage(e DBExecutor, messageID string) (*Message, error) {
 	var message Message
 	queryResult := e.QueryRow("SELECT chat_id, message_title, message_id FROM messages WHERE message_id = $1", messageID)
-	err := queryResult.Scan(&message.ChatID, &message.MessageTitle, &message.MessageID)
+	err := queryResult.Scan(&message.ChatID, &message.Title, &message.MessageID)
 	if err != nil {
 		log.Print(err)
 		return nil, err
