@@ -1,4 +1,4 @@
-package dispatcher
+package router
 
 import (
 	"fmt"
@@ -9,13 +9,13 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-func Text(context tele.Context, b *bot.BotData) error {
+func DispatchText(context tele.Context, b *bot.BotData) error {
 	chatID := context.Chat().ID
 	state := b.UserSessionState[chatID]
 
 	switch state {
 	case bot.UserStateDefault:
-		return ui.MainMenu(context, b)
+		return ui.MainMenuKeyboard(context, b)
 	case bot.UserStateAwaitMessage, bot.UserStateAwaitTitle:
 		return sendmessage.DispatchText(context, b)
 	default:

@@ -55,7 +55,7 @@ func handleMessageText(context tele.Context, b *bot.BotData) error {
 	b.MessageCache[chatID] = message
 	b.UserSessionState[chatID] = bot.UserStateAwaitTitleDecision
 
-	return context.Send("Do you want to add title for a message?", ui.TitleQuestion(b))
+	return context.Send("Do you want to add title for a message?", ui.TitleQuestionKeyboard(b))
 }
 
 func handleMessageTitle(context tele.Context, b *bot.BotData) error {
@@ -75,7 +75,7 @@ func handleInitialSend(context tele.Context, b *bot.BotData) error {
 	b.MessageTransactionCache[chatID] = &bot.MessageTransaction{
 		From: tele.ChatID(chatID),
 	}
-	return context.Send("Names:", ui.PlayerNames(b))
+	return context.Send("Names:", ui.PlayerNamesKeyboard(b))
 }
 
 func handlePlayerName(context tele.Context, b *bot.BotData, cbData string) error {
@@ -163,8 +163,8 @@ func finilize(context tele.Context, b *bot.BotData) error {
 		return err
 	}
 
-	messageFromPlayerName := db.GetUser(b.DB, int64(transaction.From)).PlayerName
-	messageToPlayerName := db.GetUser(b.DB, int64(transaction.To)).PlayerName
+	messageFromPlayerName := db.GetUserByID(b.DB, int64(transaction.From)).PlayerName
+	messageToPlayerName := db.GetUserByID(b.DB, int64(transaction.To)).PlayerName
 
 	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\nTo: %s\n\n %s",
 		message.Title,
@@ -180,5 +180,5 @@ func finilize(context tele.Context, b *bot.BotData) error {
 	b.ClearUserCache(chatID)
 
 	context.Send("Message sent")
-	return ui.MainMenu(context, b)
+	return ui.MainMenuKeyboard(context, b)
 }

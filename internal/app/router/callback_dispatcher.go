@@ -1,4 +1,4 @@
-package dispatcher
+package router
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-func Callbacks(context tele.Context, b *bot.BotData) error {
+func DispatchCallback(context tele.Context, b *bot.BotData) error {
 	context.Respond()
 
 	rawCallbackData := context.Callback().Data

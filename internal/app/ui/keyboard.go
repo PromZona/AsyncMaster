@@ -10,7 +10,7 @@ import (
 )
 
 func MainMenuKeyboard(context tele.Context, b *bot.BotData) error {
-	user := db.GetUser(b.DB, context.Chat().ID)
+	user := db.GetUserByID(b.DB, context.Chat().ID)
 	var menu *tele.ReplyMarkup
 	if user.Role == bot.RoleMaster {
 		menu = b.MasterMenu

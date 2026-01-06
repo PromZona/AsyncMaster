@@ -13,7 +13,7 @@ func RegistrationCheck(b *bot.BotData) tele.MiddlewareFunc {
 		return func(context tele.Context) error {
 			chatID := context.Chat().ID
 
-			if !db.EnsureUser(b.DB, context.Chat().ID) {
+			if !db.EnsureUserExist(b.DB, context.Chat().ID) {
 				if _, ok := b.UserSessionState[chatID]; !ok {
 					b.UserSessionState[chatID] = bot.UserStateAwaitPassword
 				}

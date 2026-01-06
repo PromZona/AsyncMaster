@@ -11,5 +11,5 @@ func HandleCancelButton(ctx tele.Context, b *bot.BotData) error {
 	chatID := ctx.Chat().ID
 	b.ClearUserCache(chatID)
 	b.UserSessionState[chatID] = bot.UserStateDefault
-	return ui.MainMenu(ctx, b)
+	return ui.MainMenuKeyboard(ctx, b)
 }

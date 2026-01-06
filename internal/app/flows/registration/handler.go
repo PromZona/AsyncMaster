@@ -37,7 +37,7 @@ func HandleRegisterUser(context tele.Context, b *bot.BotData) error {
 			Role:         bot.RolePlayer,
 		}
 
-		err := db.RegisterUser(b.DB, user)
+		err := db.CreateUser(b.DB, user)
 		if err != nil {
 			log.Print("Error while registering user, ", err)
 			return context.Send("Failed to register you, contact administrator")
