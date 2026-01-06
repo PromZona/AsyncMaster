@@ -23,7 +23,7 @@ func Callbacks(context tele.Context, b *bot.BotData) error {
 	case "send", "player_names", "no_title", "yes_title":
 		return sendmessage.DispatchCallback(context, b, cbUnique, cbData)
 	default:
-		return fmt.Errorf("error, met unknown callback unique while dispatching callback: ", cbUnique)
+		return fmt.Errorf("error, met unknown callback unique while dispatching callback: %s", cbUnique)
 	}
 }
 

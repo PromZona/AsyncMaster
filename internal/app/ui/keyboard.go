@@ -9,7 +9,7 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-func MainMenu(context tele.Context, b *bot.BotData) error {
+func MainMenuKeyboard(context tele.Context, b *bot.BotData) error {
 	user := db.GetUser(b.DB, context.Chat().ID)
 	var menu *tele.ReplyMarkup
 	if user.Role == bot.RoleMaster {
@@ -20,7 +20,7 @@ func MainMenu(context tele.Context, b *bot.BotData) error {
 	return context.Send("Main menu", menu)
 }
 
-func PlayerNames(b *bot.BotData) *tele.ReplyMarkup {
+func PlayerNamesKeyboard(b *bot.BotData) *tele.ReplyMarkup {
 	result := &tele.ReplyMarkup{}
 
 	playerNames, chatIDs, err := db.GetUserPlayerNamesAndChatID(b.DB)
@@ -48,7 +48,7 @@ func PlayerNames(b *bot.BotData) *tele.ReplyMarkup {
 	return result
 }
 
-func TitleQuestion(bot *bot.BotData) *tele.ReplyMarkup {
+func TitleQuestionKeyboard(bot *bot.BotData) *tele.ReplyMarkup {
 	result := &tele.ReplyMarkup{}
 
 	btnNo := result.Data("No", "no_title")

@@ -14,7 +14,7 @@ type DBExecutor interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 }
 
-func RegisterUser(e DBExecutor, user *bot.UserData) error {
+func CreateUser(e DBExecutor, user *bot.UserData) error {
 	log.Print("Register User: ", user.ChatID, " ", user.TelegramName)
 
 	result, err := e.Exec("insert into users (chat_id, telegram_name, player_name, role) values ($1, $2, $3, $4)",
@@ -42,7 +42,7 @@ func UpdateUser(e DBExecutor, user *bot.UserData) {
 	}
 }
 
-func GetUser(e DBExecutor, chatID int64) *bot.UserData {
+func GetUserByID(e DBExecutor, chatID int64) *bot.UserData {
 	var newUser bot.UserData
 	queryResult := e.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id, role FROM users WHERE chat_id = $1", chatID)
 	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.ChatID, &newUser.Role)
@@ -116,7 +116,7 @@ func GetUserPlayerNamesAndChatID(e DBExecutor) (names []string, chatIDs []int64,
 	return names, chatIDs, nil
 }
 
-func EnsureUser(e DBExecutor, chatID int64) bool {
+func EnsureUserExist(e DBExecutor, chatID int64) bool {
 	var isExist bool
 	queryResult := e.QueryRow("SELECT EXISTS (SELECT 1 FROM users WHERE chat_id = $1)", chatID)
 	queryResult.Scan(&isExist)
@@ -134,7 +134,7 @@ func CreateMessage(e DBExecutor, message *bot.Message) (*bot.Message, error) {
 	return message, nil
 }
 
-func GetMessage(e DBExecutor, messageID string) (*bot.Message, error) {
+func GetMessageByID(e DBExecutor, messageID string) (*bot.Message, error) {
 	var message bot.Message
 	queryResult := e.QueryRow("SELECT chat_id, message_title, message_id FROM messages WHERE message_id = $1", messageID)
 	err := queryResult.Scan(&message.ChatID, &message.Title, &message.MessageID)
