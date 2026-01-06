@@ -1,53 +1,13 @@
-package app
+package bot
 
 import (
 	"database/sql"
 	"strconv"
-	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
 	tele "gopkg.in/telebot.v4"
 )
-
-type UserState int
-
-const (
-	// Normal State of Being
-	UserStateDefault UserState = 0
-
-	// Registration Phase
-	UserStateAwaitPassword = 100
-	UserStateAwaitCodename = 101
-
-	// Master Commands
-	UserStateAwaitSavingMessage    = 200
-	UserStateAwaitTitleForMesssage = 201
-
-	// Player Commands
-	UserStateAwaitResipient     = 300
-	UserStateAwaitMessage       = 301
-	UserStateAwaitTitleDecision = 302
-	UserStateAwaitTitle         = 303
-)
-
-type UserRole int
-
-const (
-	RolePlayer UserRole = 0
-	RoleMaster UserRole = 1
-)
-
-type UserData struct {
-	ChatID       int64
-	TelegramName string
-	PlayerName   string
-	Role         UserRole
-}
-
-func (user *UserData) Recipient() string {
-	return strconv.FormatInt(int64(user.ChatID), 10)
-}
 
 type BotData struct {
 	DB                      *sql.DB
@@ -94,6 +54,17 @@ func BotInit(db *sql.DB) *BotData {
 	return bot
 }
 
+type UserData struct {
+	ChatID       int64
+	TelegramName string
+	PlayerName   string
+	Role         UserRole
+}
+
+func (user *UserData) Recipient() string {
+	return strconv.FormatInt(int64(user.ChatID), 10)
+}
+
 func (b *BotData) ClearUserCache(chatID int64) {
 	delete(b.MessageCache, chatID)
 	delete(b.MessageTransactionCache, chatID)
@@ -123,19 +94,6 @@ type MessageTransaction struct {
 	To        tele.ChatID
 
 	Message *Message
-}
-
-func parseCallbackDataString(callbackData string) (unique, data string) {
-	trimmed := strings.Trim(callbackData, "\f")
-	parts := strings.SplitN(trimmed, "|", 2)
-	count := len(parts)
-	if count == 2 {
-		return parts[0], parts[1]
-	}
-	if count == 1 {
-		return parts[0], ""
-	}
-	return "", ""
 }
 
 type MasterRequest struct {

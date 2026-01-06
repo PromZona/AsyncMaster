@@ -1,71 +1,13 @@
 package main
 
-import (
-	"database/sql"
-	"log"
-	"os"
-	"time"
-
-	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
-	tele "gopkg.in/telebot.v4"
-
-	"github.com/PromZona/AsyncMaster/internal/app"
-)
+import "github.com/PromZona/AsyncMaster/internal/app"
 
 func main() {
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	psqlInfo := os.Getenv("DB_CONNECTION_STRING")
-	db, err := sql.Open("postgres", psqlInfo)
+	b, db, err := app.Init()
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
 
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-	log.Print("Database successfully connected!")
-
-	pref := tele.Settings{
-		Token:  os.Getenv("BOT_TOKEN"),
-		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
-	}
-
-	b, err := tele.NewBot(pref)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	botData := app.BotInit(db)
-
-	b.Use(app.ErrorRecoveryMiddleware(botData))
-	b.Use(app.RegistrationCheckMiddleware(botData))
-
-	b.Handle(tele.OnText, func(ctx tele.Context) error { return app.HandleText(ctx, botData) })
-
-	b.Handle("/start", func(ctx tele.Context) error { return app.HandleStartMessage(ctx, botData) })
-	b.Handle("/save", func(ctx tele.Context) error { return app.HandleSave(ctx, botData) })
-	b.Handle("/send", func(ctx tele.Context) error { return app.HandleSend(ctx, botData) })
-	b.Handle("/elevate", func(ctx tele.Context) error { return app.HandleElevateToMaster(ctx, botData) })
-
-	b.Handle(&botData.BtnCancel, func(ctx tele.Context) error {
-		ctx.Respond()
-		chatID := ctx.Chat().ID
-		botData.ClearUserCache(chatID)
-		botData.UserSessionState[chatID] = app.UserStateDefault
-		return app.SendMainMenu(ctx, botData)
-	})
-	b.Handle(tele.OnCallback, func(ctx tele.Context) error {
-		return app.HandleCallbacks(ctx, botData)
-	})
-
-	b.Start()
+	app.Start(b)
 }
