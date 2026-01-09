@@ -10,48 +10,27 @@ import (
 )
 
 type BotData struct {
-	DB                      *sql.DB
-	UserSessionState        map[int64]UserState
-	MessageCache            map[int64]*Message
-	MessageTransactionCache map[int64]*MessageTransaction
-	UserRegistrationCache   map[int64]*UserData
+	DB *sql.DB
 
-	PlayerMenu *tele.ReplyMarkup
-	MasterMenu *tele.ReplyMarkup
-	BtnCancel  tele.Btn
+	UserActiveSessions    map[int64]FlowSession
+	UserRegistrationCache map[int64]*UserData
 }
 
 func BotInit(db *sql.DB) *BotData {
 	bot := &BotData{
-		DB:                      db,
-		UserSessionState:        make(map[int64]UserState),
-		MessageCache:            make(map[int64]*Message),
-		MessageTransactionCache: make(map[int64]*MessageTransaction),
-		UserRegistrationCache:   make(map[int64]*UserData),
-		PlayerMenu:              &tele.ReplyMarkup{},
-		MasterMenu:              &tele.ReplyMarkup{},
+		DB:                    db,
+		UserActiveSessions:    make(map[int64]FlowSession),
+		UserRegistrationCache: make(map[int64]*UserData),
 	}
-
-	// Player Menu Init
-	btnSend := bot.PlayerMenu.Data("Send To Player", "send")
-	bot.PlayerMenu.Inline(
-		bot.PlayerMenu.Row(btnSend),
-	)
-
-	// Master Menu Init
-	btnSendMasters := bot.MasterMenu.Data("Send To Player", "send")
-	btnMasterRequest := bot.MasterMenu.Data("Master Request", "master_request")
-	bot.MasterMenu.Inline(
-		bot.MasterMenu.Row(btnSendMasters, btnMasterRequest),
-	)
-
-	// Cancel Button Init
-	bot.BtnCancel = tele.Btn{
-		Unique: "cancel",
-		Text:   "Cancel",
-	}
-
 	return bot
+}
+
+type FlowSession interface {
+	Name() string
+	IsSupportedCallback(string) bool
+	IsDone() bool
+	DispatchCallback(context tele.Context, cbUnique string, cbData string) error
+	DispatchText(context tele.Context) error
 }
 
 type UserData struct {
@@ -66,9 +45,16 @@ func (user *UserData) Recipient() string {
 }
 
 func (b *BotData) ClearUserCache(chatID int64) {
-	delete(b.MessageCache, chatID)
-	delete(b.MessageTransactionCache, chatID)
+	delete(b.UserActiveSessions, chatID)
 	delete(b.UserRegistrationCache, chatID)
+}
+
+func (b *BotData) GetUserSession(chatID int64) FlowSession {
+	session, ok := b.UserActiveSessions[chatID]
+	if !ok {
+		return nil
+	}
+	return session
 }
 
 type Message struct {

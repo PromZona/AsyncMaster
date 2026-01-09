@@ -14,14 +14,21 @@ func RegistrationCheck(b *bot.BotData) tele.MiddlewareFunc {
 			chatID := context.Chat().ID
 
 			if !db.EnsureUserExist(b.DB, context.Chat().ID) {
-				if _, ok := b.UserSessionState[chatID]; !ok {
-					b.UserSessionState[chatID] = bot.UserStateAwaitPassword
-				}
-				return registration.HandleRegisterUser(context, b)
-			}
+				session := b.GetUserSession(chatID)
+				if session == nil {
+					session = &registration.Session{
+						DB:        b.DB,
+						UserState: registration.AwaitPassword,
+						Done:      false,
+					}
 
-			if _, ok := b.UserSessionState[chatID]; !ok {
-				b.UserSessionState[chatID] = bot.UserStateDefault
+					b.UserActiveSessions[chatID] = session
+				}
+				err := session.DispatchText(context)
+				if !session.IsDone() {
+					return err
+				}
+				delete(b.UserActiveSessions, chatID)
 			}
 			return next(context)
 		}

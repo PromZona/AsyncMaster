@@ -13,7 +13,7 @@ func ErrorRecovery(b *bot.BotData) tele.MiddlewareFunc {
 			err := next(context)
 			if err != nil {
 				log.Print("ERROR: ", err)
-				b.UserSessionState[context.Chat().ID] = bot.UserStateDefault
+				b.ClearUserCache(context.Chat().ID)
 				context.Send("Error occured while proccesing your request. Please, contact administrator. Returning you to main menu")
 			}
 			return err

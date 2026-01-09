@@ -1,24 +1,25 @@
 package router
 
 import (
-	"fmt"
-
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
-	sendmessage "github.com/PromZona/AsyncMaster/internal/app/flows/send_message"
+	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
 	tele "gopkg.in/telebot.v4"
 )
 
 func DispatchText(context tele.Context, b *bot.BotData) error {
 	chatID := context.Chat().ID
-	state := b.UserSessionState[chatID]
 
-	switch state {
-	case bot.UserStateDefault:
-		return ui.MainMenuKeyboard(context, b)
-	case bot.UserStateAwaitMessage, bot.UserStateAwaitTitle:
-		return sendmessage.DispatchText(context, b)
-	default:
-		return fmt.Errorf("dispatcher text met unsupported state: %d", state)
+	session := b.GetUserSession(chatID)
+
+	if session == nil {
+		return ui.MainMenuKeyboard(context, db.GetUserByID(b.DB, chatID).Role)
 	}
+
+	err := session.DispatchText(context)
+
+	if session.IsDone() {
+		delete(b.UserActiveSessions, chatID)
+	}
+	return err
 }

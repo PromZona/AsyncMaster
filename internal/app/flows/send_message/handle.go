@@ -12,37 +12,7 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-func DispatchText(context tele.Context, b *bot.BotData) error {
-	chatID := context.Chat().ID
-	state := b.UserSessionState[chatID]
-
-	switch state {
-	case bot.UserStateAwaitMessage:
-		return handleMessageText(context, b)
-	case bot.UserStateAwaitTitle:
-		return handleMessageTitle(context, b)
-	default:
-		return fmt.Errorf("sendmessage met unsupported user state while dispatching text: %d", state)
-	}
-}
-
-func DispatchCallback(context tele.Context, b *bot.BotData, cbUnique string, cbData string) error {
-
-	switch cbUnique {
-	case "send":
-		return handleInitialSend(context, b)
-	case "player_names":
-		return handlePlayerName(context, b, cbData)
-	case "no_title":
-		return handleNoTitle(context, b)
-	case "yes_title":
-		return handleYesTitle(context, b)
-	default:
-		return fmt.Errorf("sendmessage met unsupported <callback unique> while dispatching callback: %s", cbUnique)
-	}
-}
-
-func handleMessageText(context tele.Context, b *bot.BotData) error {
+func handleMessageText(context tele.Context, s *Session) error {
 	chatID := context.Chat().ID
 
 	message := &bot.Message{
@@ -52,37 +22,33 @@ func handleMessageText(context tele.Context, b *bot.BotData) error {
 		Text:      context.Text(),
 	}
 
-	b.MessageCache[chatID] = message
-	b.UserSessionState[chatID] = bot.UserStateAwaitTitleDecision
+	s.DraftMessage = message
+	s.UserState = AwaitTitleDecision
 
-	return context.Send("Do you want to add title for a message?", ui.TitleQuestionKeyboard(b))
+	return context.Send("Do you want to add title for a message?", ui.TitleQuestionKeyboard())
 }
 
-func handleMessageTitle(context tele.Context, b *bot.BotData) error {
-	chatID := context.Chat().ID
-	b.MessageCache[chatID].Title = context.Message().Text
-	return finilize(context, b)
+func handleMessageTitle(context tele.Context, s *Session) error {
+	s.DraftMessage.Title = context.Message().Text
+	return finilize(context, s)
 }
 
-func handleInitialSend(context tele.Context, b *bot.BotData) error {
+func handleInitialSend(context tele.Context, s *Session) error {
 	chatID := context.Chat().ID
-	state := b.UserSessionState[chatID]
 
-	if state != bot.UserStateDefault {
-		return context.Send("This button is not available right now, please finish your previous action")
+	s.DraftTransaction.From = tele.ChatID(chatID)
+
+	playerNames, chatIDs, err := db.GetUserPlayerNamesAndChatID(s.DB)
+	if err != nil {
+		context.Send("Error happened while processing your request, contact administrator")
+		return err
 	}
-	b.UserSessionState[chatID] = bot.UserStateAwaitResipient
-	b.MessageTransactionCache[chatID] = &bot.MessageTransaction{
-		From: tele.ChatID(chatID),
-	}
-	return context.Send("Names:", ui.PlayerNamesKeyboard(b))
+	s.UserState = AwaitResipient
+	return context.Send("Names:", ui.PlayerNamesKeyboard(playerNames, chatIDs))
 }
 
-func handlePlayerName(context tele.Context, b *bot.BotData, cbData string) error {
-	chatID := context.Chat().ID
-	state := b.UserSessionState[chatID]
-
-	if state != bot.UserStateAwaitResipient {
+func handlePlayerName(context tele.Context, s *Session, cbData string) error {
+	if s.UserState != AwaitResipient {
 		return context.Send("This button is not available right now, please finish your previous action")
 	}
 
@@ -91,56 +57,41 @@ func handlePlayerName(context tele.Context, b *bot.BotData, cbData string) error
 		return fmt.Errorf("splitting callbackdata, met unexpected amount of data: %d", len(splited))
 	}
 
-	transaction, ok := b.MessageTransactionCache[chatID]
-	if !ok {
-		return fmt.Errorf("retrieving transaction message. No message entry found")
-	}
-
 	toChatID, err := strconv.ParseInt(splited[1], 10, 64)
 	if err != nil {
 		return err
 	}
 
-	transaction.To = tele.ChatID(toChatID)
-	b.UserSessionState[chatID] = bot.UserStateAwaitMessage
+	s.DraftTransaction.To = tele.ChatID(toChatID)
+	s.UserState = AwaitMessage
 	return context.Send("Write your message:")
 }
 
-func handleYesTitle(context tele.Context, b *bot.BotData) error {
-	chatID := context.Chat().ID
-	state := b.UserSessionState[chatID]
-
-	if state != bot.UserStateAwaitTitleDecision {
+func handleYesTitle(context tele.Context, s *Session) error {
+	if s.UserState != AwaitTitleDecision {
 		return context.Send("This button is not available right now, please finish your previous action")
 	}
-	b.UserSessionState[chatID] = bot.UserStateAwaitTitle
+	s.UserState = AwaitTitle
 	return context.Send("Write title for your message:")
 }
 
-func handleNoTitle(context tele.Context, b *bot.BotData) error {
-
-	chatID := context.Chat().ID
-	state := b.UserSessionState[chatID]
-	if state != bot.UserStateAwaitTitleDecision {
+func handleNoTitle(context tele.Context, s *Session) error {
+	if s.UserState != AwaitTitleDecision {
 		return context.Send("This button is not available right now, please finish your previous action")
 	}
-	return finilize(context, b)
+	return finilize(context, s)
 }
 
-func finilize(context tele.Context, b *bot.BotData) error {
+func finilize(context tele.Context, s *Session) error {
 	chatID := context.Chat().ID
 
-	transaction, ok := b.MessageTransactionCache[chatID]
-	if !ok {
-		return fmt.Errorf("expected transaction message to exist while handling UserStateAwaitMessage state")
+	transaction := s.DraftTransaction
+	message := s.DraftMessage
+	if transaction == nil || message == nil {
+		return fmt.Errorf("expected transaction message and message to exist while sending message")
 	}
 
-	message, ok := b.MessageCache[chatID]
-	if !ok {
-		return fmt.Errorf("expected message to exist while handling UserStateAwaitMessage state")
-	}
-
-	tx, err := b.DB.Begin()
+	tx, err := s.DB.Begin()
 	if err != nil {
 		return err
 	}
@@ -163,8 +114,8 @@ func finilize(context tele.Context, b *bot.BotData) error {
 		return err
 	}
 
-	messageFromPlayerName := db.GetUserByID(b.DB, int64(transaction.From)).PlayerName
-	messageToPlayerName := db.GetUserByID(b.DB, int64(transaction.To)).PlayerName
+	messageFromPlayerName := db.GetUserByID(s.DB, int64(transaction.From)).PlayerName
+	messageToPlayerName := db.GetUserByID(s.DB, int64(transaction.To)).PlayerName
 
 	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\nTo: %s\n\n %s",
 		message.Title,
@@ -176,9 +127,7 @@ func finilize(context tele.Context, b *bot.BotData) error {
 
 	log.Printf("Player send message succesfully, transaction id: %d", transaction.ID)
 
-	b.UserSessionState[chatID] = bot.UserStateDefault
-	b.ClearUserCache(chatID)
-
 	context.Send("Message sent")
-	return ui.MainMenuKeyboard(context, b)
+	s.Done = true
+	return ui.MainMenuKeyboard(context, db.GetUserByID(s.DB, chatID).Role)
 }

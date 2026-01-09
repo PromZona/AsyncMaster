@@ -5,34 +5,26 @@ import (
 	"log"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
-	"github.com/PromZona/AsyncMaster/internal/app/db"
 	tele "gopkg.in/telebot.v4"
 )
 
-func MainMenuKeyboard(context tele.Context, b *bot.BotData) error {
-	user := db.GetUserByID(b.DB, context.Chat().ID)
+func MainMenuKeyboard(context tele.Context, role bot.UserRole) error {
 	var menu *tele.ReplyMarkup
-	if user.Role == bot.RoleMaster {
-		menu = b.MasterMenu
+	if role == bot.RoleMaster {
+		menu = masterMenu()
 	} else {
-		menu = b.PlayerMenu
+		menu = playerMenu()
 	}
 	return context.Send("Main menu", menu)
 }
 
-func PlayerNamesKeyboard(b *bot.BotData) *tele.ReplyMarkup {
-	result := &tele.ReplyMarkup{}
-
-	playerNames, chatIDs, err := db.GetUserPlayerNamesAndChatID(b.DB)
-	if err != nil {
-		log.Print("Error while creating keyboard, ", err)
-		return nil
-	}
+func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) *tele.ReplyMarkup {
 	if len(playerNames) != len(chatIDs) {
 		log.Print("Error while creating keyboard, playerNames are not the same size as chatIDs: ", len(playerNames), "; ", len(chatIDs))
 		return nil
 	}
 
+	result := &tele.ReplyMarkup{}
 	var btnPlayerNames []tele.Btn
 
 	for i, name := range playerNames {
@@ -42,13 +34,13 @@ func PlayerNamesKeyboard(b *bot.BotData) *tele.ReplyMarkup {
 
 	result.Inline(
 		result.Row(btnPlayerNames...),
-		result.Row(b.BtnCancel),
+		result.Row(cancelButton()),
 	)
 
 	return result
 }
 
-func TitleQuestionKeyboard(bot *bot.BotData) *tele.ReplyMarkup {
+func TitleQuestionKeyboard() *tele.ReplyMarkup {
 	result := &tele.ReplyMarkup{}
 
 	btnNo := result.Data("No", "no_title")
@@ -56,8 +48,35 @@ func TitleQuestionKeyboard(bot *bot.BotData) *tele.ReplyMarkup {
 
 	result.Inline(
 		result.Row(btnNo, btnYes),
-		result.Row(bot.BtnCancel),
+		result.Row(cancelButton()),
 	)
 
 	return result
+}
+
+func cancelButton() tele.Btn {
+	btnCancel := tele.Btn{
+		Unique: "cancel",
+		Text:   "Cancel",
+	}
+	return btnCancel
+}
+
+func masterMenu() *tele.ReplyMarkup {
+	menu := &tele.ReplyMarkup{}
+	btnSendMasters := menu.Data("Send To Player", "send")
+	btnMasterRequest := menu.Data("Master Request", "master_request")
+	menu.Inline(
+		menu.Row(btnSendMasters, btnMasterRequest),
+	)
+	return menu
+}
+
+func playerMenu() *tele.ReplyMarkup {
+	menu := &tele.ReplyMarkup{}
+	btnSend := menu.Data("Send To Player", "send")
+	menu.Inline(
+		menu.Row(btnSend),
+	)
+	return menu
 }

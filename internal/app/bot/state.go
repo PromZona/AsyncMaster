@@ -3,6 +3,15 @@ package bot
 type UserState int
 
 const (
+	Idle                      UserState = 0
+	InRegistrationFlow        UserState = 1
+	InSendMessageFlow         UserState = 2
+	InCreateMasterRequestFlow UserState = 3
+)
+
+/* old one
+DELETE AFTER REFACTOR
+const (
 	// Normal State of Being
 	UserStateDefault UserState = 0
 
@@ -15,8 +24,6 @@ const (
 	UserStateAwaitTitleForMesssage = 201
 
 	// Player Commands
-	UserStateAwaitResipient     = 300
-	UserStateAwaitMessage       = 301
-	UserStateAwaitTitleDecision = 302
-	UserStateAwaitTitle         = 303
+
 )
+*/

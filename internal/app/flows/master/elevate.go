@@ -12,9 +12,9 @@ import (
 func HandleElevateToMaster(context tele.Context, b *bot.BotData) error {
 	args := context.Args()
 	chatID := context.Chat().ID
-	state := b.UserSessionState[chatID]
+	session := b.GetUserSession(chatID)
 
-	if state != bot.UserStateDefault {
+	if session != nil {
 		return context.Send("Please finish previous action to activate this command")
 	}
 
@@ -31,5 +31,5 @@ func HandleElevateToMaster(context tele.Context, b *bot.BotData) error {
 	user.Role = bot.RoleMaster
 	db.UpdateUser(b.DB, user)
 
-	return context.Send("Role updated to Master", ui.MainMenuKeyboard(context, b))
+	return context.Send("Role updated to Master", ui.MainMenuKeyboard(context, db.GetUserByID(b.DB, chatID).Role))
 }
