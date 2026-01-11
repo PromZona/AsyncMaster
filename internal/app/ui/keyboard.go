@@ -59,7 +59,7 @@ func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) *tele.ReplyMarkup {
 
 	allRows := make([]tele.Row, 0, len(masterRequest.RollRequests)+1)
 
-	btnReply := menu.Data("Reply to Master", "reply_to_master")
+	btnReply := menu.Data("Reply to Master", "reply_to_master", fmt.Sprintf("%d", masterRequest.ID))
 	allRows = append(allRows, menu.Row(btnReply))
 
 	for _, roll := range masterRequest.RollRequests {

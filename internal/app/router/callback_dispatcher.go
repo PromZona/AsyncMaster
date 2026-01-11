@@ -7,6 +7,7 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	answermaster "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master"
 	masterrequest "github.com/PromZona/AsyncMaster/internal/app/flows/master_request"
 	sendmessage "github.com/PromZona/AsyncMaster/internal/app/flows/send_message"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
@@ -68,5 +69,11 @@ var UniqueToSessionFactory = map[string]SessionFactory{
 	},
 	"start_master_request": func(db *sql.DB) bot.FlowSession {
 		return masterrequest.NewSession(db)
+	},
+	"reply_to_master": func(db *sql.DB) bot.FlowSession {
+		return answermaster.NewSession(db)
+	},
+	"roll_request": func(db *sql.DB) bot.FlowSession {
+		return answermaster.NewSession(db)
 	},
 }

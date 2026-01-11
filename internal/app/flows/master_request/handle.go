@@ -133,7 +133,8 @@ func finilize(context tele.Context, s *Session) error {
 	formattedMessage := fmt.Sprintf("MASTER REQUEST\n\n%s", masterRequest.TextRequest)
 	context.Bot().Send(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
 
-	return context.Send("Commited to db")
+	s.Done = true
+	return context.Send("Message send to resipient")
 }
 
 func sendRollQuestion(context tele.Context) error {

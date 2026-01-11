@@ -186,12 +186,30 @@ func CreateMasterRequest(e DBExecutor, request *bot.MasterRequest) (*bot.MasterR
 	return request, nil
 }
 
-func GetMasterRequest(e DBExecutor) error {
+func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
+	var request bot.MasterRequest
+	queryResult := e.QueryRow("SELECT id, to_player, text_request, created_at, is_answered FROM master_requests WHERE id = $1", id)
+	err := queryResult.Scan(&request.ID, &request.To, &request.TextRequest, &request.CreatedAt, &request.IsAnswered)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	return &request, nil
+}
+
+func UpdateMasterRequest(e DBExecutor, masterRequest *bot.MasterRequest) error {
+	_, err := e.Exec("UPDATE master_requests SET to_player = $1, text_request = $2, text_response = $3, is_answered = $4 WHERE id = $5",
+		masterRequest.To,
+		masterRequest.TextRequest,
+		masterRequest.TextResponse,
+		masterRequest.IsAnswered,
+		masterRequest.ID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
-func UpdateMasterRequest(e DBExecutor) error {
-	return nil
-}
+
 func DeleteMasterRequest(e DBExecutor) error {
 	return nil
 }
@@ -207,12 +225,30 @@ func CreateRollRequest(e DBExecutor, roll *bot.RollRequest, masterRequestID int)
 	return roll, nil
 }
 
-func GetRollRequest(e DBExecutor) error {
+func GetRollRequestByID(e DBExecutor, rollID int) (*bot.RollRequest, error) {
+	var request bot.RollRequest
+	queryResult := e.QueryRow("SELECT id, created_at, title, dice_count, dice_sides FROM roll_requests WHERE id = $1", rollID)
+	err := queryResult.Scan(&request.ID, &request.CreatedAt, &request.Title, &request.DiceCount, &request.DiceSides)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	return &request, nil
+}
+
+func UpdateRollRequest(e DBExecutor, roll *bot.RollRequest) error {
+	_, err := e.Exec("UPDATE roll_requests SET title = $1, dice_count = $2, dice_sides = $3, roll_result = $4 WHERE id = $5",
+		roll.Title,
+		roll.DiceCount,
+		roll.DiceSides,
+		roll.RollResult,
+		roll.ID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
-func UpdateRollRequest(e DBExecutor) error {
-	return nil
-}
+
 func DeleteRollRequest(e DBExecutor) error {
 	return nil
 }
