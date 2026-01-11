@@ -123,11 +123,15 @@ func finilize(context tele.Context, s *Session) error {
 			return err
 		}
 	}
+	masterRequest.RollRequests = s.RollRequests
 
 	err = tx.Commit()
 	if err != nil {
 		return err
 	}
+
+	formattedMessage := fmt.Sprintf("MASTER REQUEST\n\n%s", masterRequest.TextRequest)
+	context.Bot().Send(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
 
 	return context.Send("Commited to db")
 }

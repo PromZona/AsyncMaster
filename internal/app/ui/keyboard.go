@@ -54,6 +54,25 @@ func YesNoKeyboard() *tele.ReplyMarkup {
 	return result
 }
 
+func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) *tele.ReplyMarkup {
+	menu := &tele.ReplyMarkup{}
+
+	allRows := make([]tele.Row, 0, len(masterRequest.RollRequests)+1)
+
+	btnReply := menu.Data("Reply to Master", "reply_to_master")
+	allRows = append(allRows, menu.Row(btnReply))
+
+	for _, roll := range masterRequest.RollRequests {
+		text := fmt.Sprintf("%dd%d: %s", roll.DiceCount, roll.DiceSides, roll.Title)
+		data := fmt.Sprintf("%d", roll.ID)
+		btnRoll := menu.Data(text, "roll_request", data)
+		allRows = append(allRows, menu.Row(btnRoll))
+	}
+	menu.Inline(allRows...)
+
+	return menu
+}
+
 func cancelButton() tele.Btn {
 	btnCancel := tele.Btn{
 		Unique: "cancel",
