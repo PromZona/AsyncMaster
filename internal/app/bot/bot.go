@@ -85,6 +85,19 @@ type MessageTransaction struct {
 type MasterRequest struct {
 	ID           int
 	CreatedAt    time.Time
+	To           tele.ChatID
 	TextRequest  string
 	TextResponse string
+	IsAnswered   bool
+
+	RollRequests []*RollRequest
+}
+
+type RollRequest struct {
+	ID         int
+	CreatedAt  time.Time
+	Title      string
+	DiceCount  int
+	DiceSides  int
+	RollResult int
 }

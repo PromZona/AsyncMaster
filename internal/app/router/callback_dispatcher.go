@@ -7,6 +7,7 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	masterrequest "github.com/PromZona/AsyncMaster/internal/app/flows/master_request"
 	sendmessage "github.com/PromZona/AsyncMaster/internal/app/flows/send_message"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
 	tele "gopkg.in/telebot.v4"
@@ -64,5 +65,8 @@ type SessionFactory func(db *sql.DB) bot.FlowSession
 var UniqueToSessionFactory = map[string]SessionFactory{
 	"send": func(db *sql.DB) bot.FlowSession {
 		return sendmessage.NewSession(db)
+	},
+	"start_master_request": func(db *sql.DB) bot.FlowSession {
+		return masterrequest.NewSession(db)
 	},
 }

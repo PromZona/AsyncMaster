@@ -153,7 +153,7 @@ func DeleteMessage() {
 
 }
 
-func CreateTransaction(e DBExecutor, transaction *bot.MessageTransaction) (*bot.MessageTransaction, error) {
+func CreateMesssageTransaction(e DBExecutor, transaction *bot.MessageTransaction) (*bot.MessageTransaction, error) {
 	err := e.QueryRow("INSERT INTO message_transaction (from_chat, to_chat, message_id) VALUES ($1, $2, $3) RETURNING id, created_at",
 		transaction.From, transaction.To, transaction.Message.ID).
 		Scan(&transaction.ID, &transaction.CreatedAt)
@@ -164,16 +164,55 @@ func CreateTransaction(e DBExecutor, transaction *bot.MessageTransaction) (*bot.
 	return transaction, nil
 }
 
-func GetTransaction() {
+func GetMessageTransaction() {
 
 }
 
-func UpdateTransaction() {
+func UpdateMesssageTransaction() {
 
 }
 
-func DeleteTransaction() {
+func DeleteMessageTransaction() {
 
 }
 
-// func createMasterRequest(e DBExecutor, ...)
+func CreateMasterRequest(e DBExecutor, request *bot.MasterRequest) (*bot.MasterRequest, error) {
+	err := e.QueryRow("INSERT INTO master_requests (text_request, to_player) VALUES ($1, $2) RETURNING id, created_at",
+		request.TextRequest, request.To).
+		Scan(&request.ID, &request.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
+func GetMasterRequest(e DBExecutor) error {
+	return nil
+}
+func UpdateMasterRequest(e DBExecutor) error {
+	return nil
+}
+func DeleteMasterRequest(e DBExecutor) error {
+	return nil
+}
+
+func CreateRollRequest(e DBExecutor, roll *bot.RollRequest, masterRequestID int) (*bot.RollRequest, error) {
+	err := e.QueryRow("INSERT INTO roll_requests (title, dice_count, dice_sides, transaction_id) VALUES ($1, $2, $3, $4) RETURNING id, created_at",
+		roll.Title, roll.DiceCount, roll.DiceSides, masterRequestID).
+		Scan(&roll.ID, &roll.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+	return roll, nil
+}
+
+func GetRollRequest(e DBExecutor) error {
+	return nil
+}
+func UpdateRollRequest(e DBExecutor) error {
+	return nil
+}
+func DeleteRollRequest(e DBExecutor) error {
+	return nil
+}

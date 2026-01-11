@@ -40,11 +40,11 @@ func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) *tele.ReplyMarku
 	return result
 }
 
-func TitleQuestionKeyboard() *tele.ReplyMarkup {
+func YesNoKeyboard() *tele.ReplyMarkup {
 	result := &tele.ReplyMarkup{}
 
-	btnNo := result.Data("No", "no_title")
-	btnYes := result.Data("Yes", "yes_title")
+	btnNo := result.Data("No", "no")
+	btnYes := result.Data("Yes", "yes")
 
 	result.Inline(
 		result.Row(btnNo, btnYes),
@@ -65,7 +65,7 @@ func cancelButton() tele.Btn {
 func masterMenu() *tele.ReplyMarkup {
 	menu := &tele.ReplyMarkup{}
 	btnSendMasters := menu.Data("Send To Player", "send")
-	btnMasterRequest := menu.Data("Master Request", "master_request")
+	btnMasterRequest := menu.Data("Master Request", "start_master_request")
 	menu.Inline(
 		menu.Row(btnSendMasters, btnMasterRequest),
 	)

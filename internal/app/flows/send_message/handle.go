@@ -25,7 +25,7 @@ func handleMessageText(context tele.Context, s *Session) error {
 	s.DraftMessage = message
 	s.UserState = AwaitTitleDecision
 
-	return context.Send("Do you want to add title for a message?", ui.TitleQuestionKeyboard())
+	return context.Send("Do you want to add title for a message?", ui.YesNoKeyboard())
 }
 
 func handleMessageTitle(context tele.Context, s *Session) error {
@@ -103,7 +103,7 @@ func finilize(context tele.Context, s *Session) error {
 	}
 
 	transaction.Message = message
-	transaction, err = db.CreateTransaction(tx, transaction)
+	transaction, err = db.CreateMesssageTransaction(tx, transaction)
 	if err != nil {
 		tx.Rollback()
 		return err

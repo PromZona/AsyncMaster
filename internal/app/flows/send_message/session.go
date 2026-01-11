@@ -38,9 +38,9 @@ func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData
 		return handleInitialSend(context, s)
 	case "player_names":
 		return handlePlayerName(context, s, cbData)
-	case "no_title":
+	case "no":
 		return handleNoTitle(context, s)
-	case "yes_title":
+	case "yes":
 		return handleYesTitle(context, s)
 	default:
 		return fmt.Errorf("sendmessage met unsupported <callback unique> while dispatching callback: %s", cbUnique)
@@ -81,6 +81,6 @@ const (
 const (
 	Send        string = "send"
 	PlayerNames        = "player_names"
-	NoTitle            = "no_title"
-	YesTitle           = "yes_title"
+	NoTitle            = "no"
+	YesTitle           = "yes"
 )
