@@ -164,8 +164,118 @@ func CreateMesssageTransaction(e DBExecutor, transaction *bot.MessageTransaction
 	return transaction, nil
 }
 
-func GetMessageTransaction() {
+func GetLastMessageTransactions(e DBExecutor, toPlayerChatID int64) ([]*bot.MessageTransaction, error) {
+	rows, err := e.Query(`
+		SELECT
+			mt.id,
+			mt.created_at,
+			mt.from_chat,
+			mt.to_chat,
 
+			m.id,
+			m.message_title,
+			m.message_id,
+			m.chat_id,
+			m.message_text
+		FROM message_transaction mt
+		JOIN messages m ON m.id = mt.message_id
+		WHERE mt.to_chat = $1
+		ORDER BY mt.created_at DESC
+		LIMIT 10
+	`, toPlayerChatID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []*bot.MessageTransaction
+
+	for rows.Next() {
+		mt := &bot.MessageTransaction{}
+		msg := &bot.Message{}
+
+		err := rows.Scan(
+			&mt.ID,
+			&mt.CreatedAt,
+			&mt.From,
+			&mt.To,
+
+			&msg.ID,
+			&msg.Title,
+			&msg.MessageID,
+			&msg.ChatID,
+			&msg.Text,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		mt.Message = msg
+		result = append(result, mt)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func GetMessageTransaction(e DBExecutor, transactionID int64) (*bot.MessageTransaction, error) {
+	rows, err := e.Query(`
+		SELECT
+			mt.id,
+			mt.created_at,
+			mt.from_chat,
+			mt.to_chat,
+
+			m.id,
+			m.message_title,
+			m.message_id,
+			m.chat_id,
+			m.message_text
+		FROM message_transaction mt
+		JOIN messages m ON m.id = mt.message_id
+		WHERE mt.id = $1
+		ORDER BY mt.created_at DESC
+		LIMIT 10
+	`, transactionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result *bot.MessageTransaction
+
+	for rows.Next() {
+		mt := &bot.MessageTransaction{}
+		msg := &bot.Message{}
+
+		err := rows.Scan(
+			&mt.ID,
+			&mt.CreatedAt,
+			&mt.From,
+			&mt.To,
+
+			&msg.ID,
+			&msg.Title,
+			&msg.MessageID,
+			&msg.ChatID,
+			&msg.Text,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		mt.Message = msg
+		result = mt
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func UpdateMesssageTransaction() {

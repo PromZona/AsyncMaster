@@ -1,11 +1,11 @@
-package _example
+package listmessages
 
 import (
 	"database/sql"
 	"fmt"
 	"slices"
 
-	"github.com/PromZona/AsyncMaster/internal/app/flows/_example/contract"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -16,12 +16,12 @@ type Session struct {
 }
 
 func (s *Session) Name() string {
-	return "_example"
+	return "list_messages"
 }
 
 func (s *Session) IsSupportedCallback(cb string) bool {
 	callbacks := []string{
-		contract.CBExample,
+		contract.CBGetMessageList, contract.CBGetMessage,
 	}
 	return slices.Contains(callbacks, cb)
 }
@@ -32,20 +32,17 @@ func (s *Session) IsDone() bool {
 
 func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData string) error {
 	switch cbUnique {
-	case contract.CBExample:
+	case contract.CBGetMessageList:
 		return handleStartFlow(context, s)
+	case contract.CBGetMessage:
+		return handleMessagePick(context, s, cbData)
 	default:
 		return fmt.Errorf("met unexpected callback unique: %s", cbUnique)
 	}
 }
 
 func (s *Session) DispatchText(context tele.Context) error {
-	switch s.UserState {
-	case AwaitTextMessage:
-		return handleTextMessage(context, s)
-	default:
-		return fmt.Errorf("met unsupported state while handling master request: %d", s.UserState)
-	}
+	return fmt.Errorf("met unsupported state while handling master request: %d", s.UserState)
 }
 
 func NewSession(db *sql.DB) *Session {
@@ -60,5 +57,5 @@ type State int
 
 const (
 	FlowStart        State = 0
-	AwaitTextMessage State = 1
+	AwaitMessagePick State = 1
 )

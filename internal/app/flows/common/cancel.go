@@ -7,6 +7,8 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
+const CBCancel = "cancel"
+
 func HandleCancelButton(ctx tele.Context, b *bot.BotData) error {
 	ctx.Respond()
 	chatID := ctx.Chat().ID

@@ -10,10 +10,13 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
 
 	answermaster "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
+	listmessages "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages"
 	masterrequest "github.com/PromZona/AsyncMaster/internal/app/flows/master_request"
 	sendmessage "github.com/PromZona/AsyncMaster/internal/app/flows/send_message"
 
 	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
+	listmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
 	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
 	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
 
@@ -26,6 +29,10 @@ func DispatchCallback(context tele.Context, b *bot.BotData) error {
 	chatID := context.Chat().ID
 	rawCallbackData := context.Callback().Data
 	cbUnique, cbData := parseCallbackDataString(rawCallbackData)
+
+	if cbUnique == common.CBCancel {
+		return common.HandleCancelButton(context, b)
+	}
 
 	session := b.GetUserSession(chatID)
 	if session == nil {
@@ -81,5 +88,8 @@ var UniqueToSessionFactory = map[string]SessionFactory{
 	},
 	answrmstrc.CBRollRequest: func(db *sql.DB) bot.FlowSession {
 		return answermaster.NewSession(db)
+	},
+	listmsgc.CBGetMessageList: func(db *sql.DB) bot.FlowSession {
+		return listmessages.NewSession(db)
 	},
 }

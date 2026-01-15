@@ -1,4 +1,4 @@
-package masterrequest
+package _example
 
 import (
 	tele "gopkg.in/telebot.v4"

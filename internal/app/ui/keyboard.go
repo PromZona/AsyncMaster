@@ -7,6 +7,7 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 
 	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
+	listmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
 	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
 	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
 
@@ -78,6 +79,24 @@ func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) *tele.ReplyMarkup {
 	return menu
 }
 
+func UserMessagesKeyboard(transactions []*bot.MessageTransaction) *tele.ReplyMarkup {
+	menu := &tele.ReplyMarkup{
+		ResizeKeyboard: true,
+	}
+
+	allRows := make([]tele.Row, 0, len(transactions)+1)
+	for _, t := range transactions {
+		text := fmt.Sprintf("%s", t.Message.Title)
+		data := fmt.Sprintf("%d", t.ID)
+		btnMessage := menu.Data(text, listmsgc.CBGetMessage, data)
+		allRows = append(allRows, menu.Row(btnMessage))
+	}
+
+	allRows = append(allRows, menu.Row(cancelButton()))
+	menu.Inline(allRows...)
+	return menu
+}
+
 func cancelButton() tele.Btn {
 	btnCancel := tele.Btn{
 		Unique: "cancel",
@@ -99,11 +118,11 @@ func masterMenu() *tele.ReplyMarkup {
 func playerMenu() *tele.ReplyMarkup {
 	menu := &tele.ReplyMarkup{}
 	btnSend := menu.Data("Send Message", sendmsgc.CBSend)
-	// btnMessages := menu.Data("My Messages", ..."user_list_messages")
+	btnMessages := menu.Data("My Messages", listmsgc.CBGetMessageList)
 	// btnMasterRequests := menu.Data("Requests From Master", ..."list_master_requests")
 	menu.Inline(
 		menu.Row(btnSend),
-		// menu.Row(btnMessages),
+		menu.Row(btnMessages),
 		//menu.Row(btnMasterRequests),
 	)
 	return menu
