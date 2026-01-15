@@ -7,10 +7,16 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	"github.com/PromZona/AsyncMaster/internal/app/ui"
+
 	answermaster "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master"
 	masterrequest "github.com/PromZona/AsyncMaster/internal/app/flows/master_request"
 	sendmessage "github.com/PromZona/AsyncMaster/internal/app/flows/send_message"
-	"github.com/PromZona/AsyncMaster/internal/app/ui"
+
+	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
+	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
+	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
+
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -64,16 +70,16 @@ func parseCallbackDataString(callbackData string) (unique, data string) {
 type SessionFactory func(db *sql.DB) bot.FlowSession
 
 var UniqueToSessionFactory = map[string]SessionFactory{
-	"send": func(db *sql.DB) bot.FlowSession {
+	sendmsgc.CBSend: func(db *sql.DB) bot.FlowSession {
 		return sendmessage.NewSession(db)
 	},
-	"start_master_request": func(db *sql.DB) bot.FlowSession {
+	mstrreqc.CBStartMasterRequest: func(db *sql.DB) bot.FlowSession {
 		return masterrequest.NewSession(db)
 	},
-	"reply_to_master": func(db *sql.DB) bot.FlowSession {
+	answrmstrc.CBReplyToMaster: func(db *sql.DB) bot.FlowSession {
 		return answermaster.NewSession(db)
 	},
-	"roll_request": func(db *sql.DB) bot.FlowSession {
+	answrmstrc.CBRollRequest: func(db *sql.DB) bot.FlowSession {
 		return answermaster.NewSession(db)
 	},
 }

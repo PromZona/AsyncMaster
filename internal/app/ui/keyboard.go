@@ -5,6 +5,11 @@ import (
 	"log"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
+
+	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
+	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
+	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
+
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -29,7 +34,7 @@ func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) *tele.ReplyMarku
 
 	for i, name := range playerNames {
 		dataString := fmt.Sprintf("%s:%d", name, chatIDs[i])
-		btnPlayerNames = append(btnPlayerNames, result.Data(name, "player_names", dataString))
+		btnPlayerNames = append(btnPlayerNames, result.Data(name, sendmsgc.CBPlayerNames, dataString))
 	}
 
 	result.Inline(
@@ -59,13 +64,13 @@ func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) *tele.ReplyMarkup {
 
 	allRows := make([]tele.Row, 0, len(masterRequest.RollRequests)+1)
 
-	btnReply := menu.Data("Reply to Master", "reply_to_master", fmt.Sprintf("%d", masterRequest.ID))
+	btnReply := menu.Data("Reply to Master", answrmstrc.CBReplyToMaster, fmt.Sprintf("%d", masterRequest.ID))
 	allRows = append(allRows, menu.Row(btnReply))
 
 	for _, roll := range masterRequest.RollRequests {
 		text := fmt.Sprintf("%dd%d: %s", roll.DiceCount, roll.DiceSides, roll.Title)
 		data := fmt.Sprintf("%d", roll.ID)
-		btnRoll := menu.Data(text, "roll_request", data)
+		btnRoll := menu.Data(text, answrmstrc.CBRollRequest, data)
 		allRows = append(allRows, menu.Row(btnRoll))
 	}
 	menu.Inline(allRows...)
@@ -83,8 +88,8 @@ func cancelButton() tele.Btn {
 
 func masterMenu() *tele.ReplyMarkup {
 	menu := &tele.ReplyMarkup{}
-	btnSendMasters := menu.Data("Send To Player", "send")
-	btnMasterRequest := menu.Data("Master Request", "start_master_request")
+	btnSendMasters := menu.Data("Send Message", sendmsgc.CBSend)
+	btnMasterRequest := menu.Data("Master Request", mstrreqc.CBStartMasterRequest)
 	menu.Inline(
 		menu.Row(btnSendMasters, btnMasterRequest),
 	)
@@ -93,9 +98,13 @@ func masterMenu() *tele.ReplyMarkup {
 
 func playerMenu() *tele.ReplyMarkup {
 	menu := &tele.ReplyMarkup{}
-	btnSend := menu.Data("Send To Player", "send")
+	btnSend := menu.Data("Send Message", sendmsgc.CBSend)
+	// btnMessages := menu.Data("My Messages", ..."user_list_messages")
+	// btnMasterRequests := menu.Data("Requests From Master", ..."list_master_requests")
 	menu.Inline(
 		menu.Row(btnSend),
+		// menu.Row(btnMessages),
+		//menu.Row(btnMasterRequests),
 	)
 	return menu
 }

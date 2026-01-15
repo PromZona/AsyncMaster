@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -21,7 +22,7 @@ func (s *Session) Name() string {
 }
 func (s *Session) IsSupportedCallback(cbUnique string) bool {
 	supported := []string{
-		"reply_to_master", "roll_request",
+		contract.CBReplyToMaster, contract.CBRollRequest,
 	}
 	return slices.Contains(supported, cbUnique)
 }
@@ -31,9 +32,9 @@ func (s *Session) IsDone() bool {
 
 func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData string) error {
 	switch cbUnique {
-	case "reply_to_master":
+	case contract.CBReplyToMaster:
 		return handleReplyToMaster(context, s, cbData)
-	case "roll_request":
+	case contract.CBRollRequest:
 		return handleRoll(context, s, cbData)
 	default:
 		return fmt.Errorf("met unexpected callback unique: %s", cbUnique)

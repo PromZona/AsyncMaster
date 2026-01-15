@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -27,20 +28,20 @@ func (s *Session) IsDone() bool {
 
 func (s *Session) IsSupportedCallback(cbUnique string) bool {
 	slice := []string{
-		Send, PlayerNames, NoTitle, YesTitle,
+		contract.CBSend, contract.CBPlayerNames, contract.CBTitleNo, contract.CBTitleYes,
 	}
 	return slices.Contains(slice, cbUnique)
 }
 
 func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData string) error {
 	switch cbUnique {
-	case "send":
+	case contract.CBSend:
 		return handleInitialSend(context, s)
-	case "player_names":
+	case contract.CBPlayerNames:
 		return handlePlayerName(context, s, cbData)
-	case "no":
+	case contract.CBTitleNo:
 		return handleNoTitle(context, s)
-	case "yes":
+	case contract.CBTitleYes:
 		return handleYesTitle(context, s)
 	default:
 		return fmt.Errorf("sendmessage met unsupported <callback unique> while dispatching callback: %s", cbUnique)
@@ -76,11 +77,4 @@ const (
 	AwaitMessage             = 2
 	AwaitTitleDecision       = 3
 	AwaitTitle               = 4
-)
-
-const (
-	Send        string = "send"
-	PlayerNames        = "player_names"
-	NoTitle            = "no"
-	YesTitle           = "yes"
 )
