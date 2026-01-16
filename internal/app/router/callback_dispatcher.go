@@ -7,15 +7,17 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
 
 	answermaster "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master"
-	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
+	listmasterrequests "github.com/PromZona/AsyncMaster/internal/app/flows/list_master_requests"
 	listmessages "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages"
 	masterrequest "github.com/PromZona/AsyncMaster/internal/app/flows/master_request"
 	sendmessage "github.com/PromZona/AsyncMaster/internal/app/flows/send_message"
 
 	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
+	listmstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/list_master_requests/contract"
 	listmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
 	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
 	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
@@ -91,5 +93,8 @@ var UniqueToSessionFactory = map[string]SessionFactory{
 	},
 	listmsgc.CBGetMessageList: func(db *sql.DB) bot.FlowSession {
 		return listmessages.NewSession(db)
+	},
+	listmstrreqc.CBGetMasterRequests: func(db *sql.DB) bot.FlowSession {
+		return listmasterrequests.NewSession(db)
 	},
 }

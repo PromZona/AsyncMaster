@@ -7,6 +7,7 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 
 	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
+	listmstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/list_master_requests/contract"
 	listmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
 	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
 	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
@@ -119,11 +120,11 @@ func playerMenu() *tele.ReplyMarkup {
 	menu := &tele.ReplyMarkup{}
 	btnSend := menu.Data("Send Message", sendmsgc.CBSend)
 	btnMessages := menu.Data("My Messages", listmsgc.CBGetMessageList)
-	// btnMasterRequests := menu.Data("Requests From Master", ..."list_master_requests")
+	btnMasterRequests := menu.Data("Last Master Request", listmstrreqc.CBGetMasterRequests)
 	menu.Inline(
 		menu.Row(btnSend),
 		menu.Row(btnMessages),
-		//menu.Row(btnMasterRequests),
+		menu.Row(btnMasterRequests),
 	)
 	return menu
 }

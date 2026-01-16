@@ -307,6 +307,17 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 	return &request, nil
 }
 
+func GetLastMasterRequest(e DBExecutor, chatID int64) (*bot.MasterRequest, error) {
+	var request bot.MasterRequest
+	queryResult := e.QueryRow("SELECT id, to_player, text_request, created_at, is_answered FROM master_requests WHERE to_player = $1", chatID)
+	err := queryResult.Scan(&request.ID, &request.To, &request.TextRequest, &request.CreatedAt, &request.IsAnswered)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+	return &request, nil
+}
+
 func UpdateMasterRequest(e DBExecutor, masterRequest *bot.MasterRequest) error {
 	_, err := e.Exec("UPDATE master_requests SET to_player = $1, text_request = $2, text_response = $3, is_answered = $4 WHERE id = $5",
 		masterRequest.To,
