@@ -38,6 +38,7 @@ type UserData struct {
 	TelegramName string
 	PlayerName   string
 	Role         UserRole
+	Faction      *Faction
 }
 
 func (user *UserData) Recipient() string {
@@ -100,4 +101,11 @@ type RollRequest struct {
 	DiceCount  int
 	DiceSides  int
 	RollResult int
+}
+
+type Faction struct {
+	ID          int
+	Name        string
+	Description string
+	Resources   string
 }

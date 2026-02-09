@@ -373,3 +373,23 @@ func UpdateRollRequest(e DBExecutor, roll *bot.RollRequest) error {
 func DeleteRollRequest(e DBExecutor) error {
 	return nil
 }
+
+func CreateFaction(e DBExecutor, faction *bot.Faction) (*bot.Faction, error) {
+	err := e.QueryRow("INSERT INTO factions (name, description, resources) VALUES ($1, $2, $3) RETURNING id",
+		faction.Name, faction.Description, faction.Resources).
+		Scan(&faction.ID)
+
+	if err != nil {
+		return nil, err
+	}
+	return faction, nil
+}
+func GetFaction(e DBExecutor) {
+
+}
+func UpdateFaction(e DBExecutor) {
+
+}
+func DeleteFaction(e DBExecutor) {
+
+}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -11,6 +12,7 @@ type Session struct {
 	DB        *sql.DB
 	UserState State
 	Done      bool
+	User      *bot.UserData
 }
 
 func (s *Session) Name() string {
@@ -35,6 +37,10 @@ func (s *Session) DispatchText(context tele.Context) error {
 		return handlePassword(context, s)
 	case AwaitCodename:
 		return handlePlayerName(context, s)
+	case AwaitFactionName:
+		return handleFactionName(context, s)
+	case AwaitFactionDescription:
+		return handleFactionDescription(context, s)
 	default:
 		return fmt.Errorf("registration met unsupported user state while dispatching text: %d", s.UserState)
 	}
@@ -43,6 +49,8 @@ func (s *Session) DispatchText(context tele.Context) error {
 type State int
 
 const (
-	AwaitPassword State = 0
-	AwaitCodename State = 1
+	AwaitPassword           State = 0
+	AwaitCodename           State = 1
+	AwaitFactionName        State = 2
+	AwaitFactionDescription State = 3
 )
