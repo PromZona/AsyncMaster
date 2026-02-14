@@ -114,8 +114,18 @@ func finilize(context tele.Context, s *Session) error {
 		return err
 	}
 
-	messageFromPlayerName := db.GetUserByID(s.DB, int64(transaction.From)).PlayerName
-	messageToPlayerName := db.GetUserByID(s.DB, int64(transaction.To)).PlayerName
+	user_from, err := db.GetUserByID(s.DB, int64(transaction.From))
+	if err != nil {
+		return err
+	}
+
+	user_to, err := db.GetUserByID(s.DB, int64(transaction.To))
+	if err != nil {
+		return err
+	}
+
+	messageFromPlayerName := user_from.PlayerName
+	messageToPlayerName := user_to.PlayerName
 
 	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\nTo: %s\n\n %s",
 		message.Title,
@@ -129,5 +139,10 @@ func finilize(context tele.Context, s *Session) error {
 
 	context.Send("Message sent")
 	s.Done = true
-	return ui.MainMenuKeyboard(context, db.GetUserByID(s.DB, chatID).Role)
+
+	user, err := db.GetUserByID(s.DB, chatID)
+	if err != nil {
+		return err
+	}
+	return ui.MainMenuKeyboard(context, user.Role)
 }

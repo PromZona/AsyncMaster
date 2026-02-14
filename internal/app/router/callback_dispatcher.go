@@ -42,7 +42,11 @@ func DispatchCallback(context tele.Context, b *bot.BotData) error {
 		if !ok {
 			log.Printf("Met not start flow cbUnique: %s. Have you forgot to register it?", cbUnique)
 			context.Send("Please start the action properly by pressing button from the menu")
-			return ui.MainMenuKeyboard(context, db.GetUserByID(b.DB, chatID).Role)
+			user, err := db.GetUserByID(b.DB, chatID)
+			if err != nil {
+				return err
+			}
+			return ui.MainMenuKeyboard(context, user.Role)
 		}
 		session = factory(b.DB)
 		b.UserActiveSessions[chatID] = session

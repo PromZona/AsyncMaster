@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
+	"github.com/PromZona/AsyncMaster/internal/app/ui"
 	_ "github.com/lib/pq"
 )
 
@@ -42,15 +43,36 @@ func UpdateUser(e DBExecutor, user *bot.UserData) {
 	}
 }
 
-func GetUserByID(e DBExecutor, chatID int64) *bot.UserData {
+func GetUserByID(e DBExecutor, chatID int64) (*bot.UserData, error) {
 	var newUser bot.UserData
-	queryResult := e.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id, role FROM users WHERE chat_id = $1", chatID)
-	err := queryResult.Scan(&newUser.TelegramName, &newUser.PlayerName, &newUser.ChatID, &newUser.Role)
+	queryResult := e.QueryRow(`
+		SELECT
+			u.telegram_name,
+			u.COALESCE(player_name, '') AS player_name,
+			u.chat_id,
+			u.role
+
+			f.id
+			f.name
+			f.description
+			f.resources
+		FROM users u
+		JOIN factions f ON f.user_id = u.id
+		WHERE chat_id = $1
+		`, chatID)
+	err := queryResult.Scan(
+		&newUser.TelegramName,
+		&newUser.PlayerName,
+		&newUser.ChatID,
+		&newUser.Role,
+		&newUser.Faction.ID,
+		&newUser.Faction.Name,
+		&newUser.Faction.Description,
+		&newUser.Faction.Resources)
 	if err != nil {
-		log.Print(err)
-		return nil
+		return nil, err
 	}
-	return &newUser
+	return &newUser, nil
 }
 
 func GetUserByName(e DBExecutor, playerName string) (*bot.UserData, error) {
@@ -392,4 +414,12 @@ func UpdateFaction(e DBExecutor) {
 }
 func DeleteFaction(e DBExecutor) {
 
+}
+
+func GetPlayerMenuData(e DBExecutor, chatID int64) *ui.PlayerMenu {
+	e.QueryRow(`
+		SELECT
+
+		FROM 
+		`)
 }

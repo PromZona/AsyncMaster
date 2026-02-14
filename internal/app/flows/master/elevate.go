@@ -27,9 +27,18 @@ func HandleElevateToMaster(context tele.Context, b *bot.BotData) error {
 		return context.Send("Password is incorrect")
 	}
 
-	user := db.GetUserByID(b.DB, chatID)
+	user, err := db.GetUserByID(b.DB, chatID)
+	if err != nil {
+		return err
+	}
+
 	user.Role = bot.RoleMaster
 	db.UpdateUser(b.DB, user)
 
-	return context.Send("Role updated to Master", ui.MainMenuKeyboard(context, db.GetUserByID(b.DB, chatID).Role))
+	user, err = db.GetUserByID(b.DB, chatID)
+	if err != nil {
+		return err
+	}
+
+	return context.Send("Role updated to Master", ui.MainMenuKeyboard(context, user.Role))
 }

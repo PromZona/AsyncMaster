@@ -39,10 +39,17 @@ func handleMessagePick(context tele.Context, s *Session, cbData string) error {
 		return err
 	}
 
-	messageFromPlayerName := db.GetUserByID(s.DB, int64(transaction.From)).PlayerName
+	user_from, err := db.GetUserByID(s.DB, int64(transaction.From))
+	if err != nil {
+		return err
+	}
+	messageFromPlayerName := user_from.PlayerName
 
-	player := db.GetUserByID(s.DB, int64(transaction.To))
-	messageToPlayerName := player.PlayerName
+	user_to, err := db.GetUserByID(s.DB, int64(transaction.To))
+	if err != nil {
+		return err
+	}
+	messageToPlayerName := user_to.PlayerName
 
 	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\nTo: %s\n\n %s",
 		transaction.Message.Title,
@@ -51,7 +58,7 @@ func handleMessagePick(context tele.Context, s *Session, cbData string) error {
 		transaction.Message.Text)
 
 	context.Send(formatedMessage)
-	return finilize(context, s, player)
+	return finilize(context, s, user_to)
 }
 
 func finilize(context tele.Context, s *Session, player *bot.UserData) error {

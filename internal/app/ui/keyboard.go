@@ -15,14 +15,17 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-func MainMenuKeyboard(context tele.Context, role bot.UserRole) error {
-	var menu *tele.ReplyMarkup
-	if role == bot.RoleMaster {
-		menu = masterMenu()
-	} else {
-		menu = playerMenu()
+func MainMenuKeyboard(context tele.Context, user *bot.UserData) error {
+
+	if user.Role == bot.RoleMaster {
+		return context.Send("Some master info here", masterMenu())
 	}
-	return context.Send("Main menu", menu)
+
+	if user.Role == bot.RolePlayer {
+		return context.Send("Some player info here", playerMenu())
+	}
+
+	return context.Send("Your role is not supported, contact administrator")
 }
 
 func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) *tele.ReplyMarkup {

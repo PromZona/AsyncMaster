@@ -13,7 +13,11 @@ func DispatchText(context tele.Context, b *bot.BotData) error {
 	session := b.GetUserSession(chatID)
 
 	if session == nil {
-		return ui.MainMenuKeyboard(context, db.GetUserByID(b.DB, chatID).Role)
+		user, err := db.GetUserByID(b.DB, chatID)
+		if err != nil {
+			return err
+		}
+		return ui.MainMenuKeyboard(context, user.Role)
 	}
 
 	err := session.DispatchText(context)

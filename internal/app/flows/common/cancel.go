@@ -13,5 +13,11 @@ func HandleCancelButton(ctx tele.Context, b *bot.BotData) error {
 	ctx.Respond()
 	chatID := ctx.Chat().ID
 	b.ClearUserCache(chatID)
-	return ui.MainMenuKeyboard(ctx, db.GetUserByID(b.DB, chatID).Role)
+
+	user, err := db.GetUserByID(b.DB, chatID)
+	if err != nil {
+		return nil
+	}
+
+	return ui.MainMenuKeyboard(ctx, user.Role)
 }
