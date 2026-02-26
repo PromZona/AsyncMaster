@@ -8,7 +8,6 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
-	"github.com/PromZona/AsyncMaster/internal/app/ui"
 
 	answermaster "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master"
 	listmasterrequests "github.com/PromZona/AsyncMaster/internal/app/flows/list_master_requests"
@@ -46,7 +45,7 @@ func DispatchCallback(context tele.Context, b *bot.BotData) error {
 			if err != nil {
 				return err
 			}
-			return ui.MainMenuKeyboard(context, user.Role)
+			return common.GetMainMenuByRole(context, b.DB, user)
 		}
 		session = factory(b.DB)
 		b.UserActiveSessions[chatID] = session

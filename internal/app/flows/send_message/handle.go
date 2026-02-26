@@ -8,6 +8,7 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
 	tele "gopkg.in/telebot.v4"
 )
@@ -144,5 +145,5 @@ func finilize(context tele.Context, s *Session) error {
 	if err != nil {
 		return err
 	}
-	return ui.MainMenuKeyboard(context, user.Role)
+	return common.GetMainMenuByRole(context, s.DB, user)
 }

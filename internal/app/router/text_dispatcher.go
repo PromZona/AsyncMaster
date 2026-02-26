@@ -3,7 +3,7 @@ package router
 import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	"github.com/PromZona/AsyncMaster/internal/app/ui"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -17,7 +17,7 @@ func DispatchText(context tele.Context, b *bot.BotData) error {
 		if err != nil {
 			return err
 		}
-		return ui.MainMenuKeyboard(context, user.Role)
+		return common.GetMainMenuByRole(context, b.DB, user)
 	}
 
 	err := session.DispatchText(context)

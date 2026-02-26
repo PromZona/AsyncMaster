@@ -13,7 +13,7 @@ func handleStartFlow(context tele.Context, s *Session) error {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
 
-	masterRequest, err := db.GetLastMasterRequest(s.DB, context.Chat().ID)
+	masterRequest, err := db.GetFirstUnansweredMasterRequest(s.DB, context.Chat().ID)
 	if err != nil {
 		return err
 	}

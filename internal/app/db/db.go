@@ -45,16 +45,18 @@ func UpdateUser(e DBExecutor, user *bot.UserData) {
 
 func GetUserByID(e DBExecutor, chatID int64) (*bot.UserData, error) {
 	var newUser bot.UserData
+	newUser.Faction = &bot.Faction{}
+
 	queryResult := e.QueryRow(`
 		SELECT
 			u.telegram_name,
-			u.COALESCE(player_name, '') AS player_name,
+			COALESCE(player_name, '') AS player_name,
 			u.chat_id,
-			u.role
+			u.role,
 
-			f.id
-			f.name
-			f.description
+			f.id,
+			f.name,
+			f.description,
 			f.resources
 		FROM users u
 		JOIN factions f ON f.user_id = u.id
@@ -329,9 +331,19 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 	return &request, nil
 }
 
-func GetLastMasterRequest(e DBExecutor, chatID int64) (*bot.MasterRequest, error) {
+func GetFirstUnansweredMasterRequest(e DBExecutor, chatID int64) (*bot.MasterRequest, error) {
 	var request bot.MasterRequest
-	queryResult := e.QueryRow("SELECT id, to_player, text_request, created_at, is_answered FROM master_requests WHERE to_player = $1", chatID)
+	queryResult := e.QueryRow(`
+		SELECT
+		 id,
+		 to_player,
+		 text_request,
+		 created_at,
+		 is_answered
+		FROM master_requests
+		WHERE to_player = $1 AND is_answered = false
+		ORDER BY created_at ASC`,
+		chatID)
 	err := queryResult.Scan(&request.ID, &request.To, &request.TextRequest, &request.CreatedAt, &request.IsAnswered)
 	if err != nil {
 		log.Print(err)
@@ -417,9 +429,37 @@ func DeleteFaction(e DBExecutor) {
 }
 
 func GetPlayerMenuData(e DBExecutor, chatID int64) *ui.PlayerMenu {
-	e.QueryRow(`
+	result := &ui.PlayerMenu{}
+	err := e.QueryRow(`
 		SELECT
+			u.player_name,
+			f.name,
+			f.description,
+			f.resources,
+			(
+        		SELECT COUNT(*)
+        		FROM master_requests mr
+        		WHERE mr.to_player = $1 AND mr.is_answered = FALSE
+    		) AS unanswered_master_requests_count
+		FROM users u
+		JOIN factions f
+			ON f.user_id = u.id
+		`, chatID).Scan(
+		&result.PlayerName,
+		&result.FactionName,
+		&result.FactionDescription,
+		&result.FactionResources,
+		&result.UnansweredMasterRequests,
+	)
+	if err != nil {
+		log.Printf("Failed to get player menu data from DB. Returning empty menu to player: %d", chatID)
+		log.Printf("%s", err)
+		return result
+	}
 
-		FROM 
-		`)
+	return result
+}
+
+func GetMasterMenuData(e DBExecutor, chatID int64) *ui.MasterMenu {
+	return &ui.MasterMenu{}
 }

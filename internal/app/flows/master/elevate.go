@@ -5,7 +5,7 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	"github.com/PromZona/AsyncMaster/internal/app/ui"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -40,5 +40,6 @@ func HandleElevateToMaster(context tele.Context, b *bot.BotData) error {
 		return err
 	}
 
-	return context.Send("Role updated to Master", ui.MainMenuKeyboard(context, user.Role))
+	context.Send("Role updated to Master")
+	return common.GetMainMenuByRole(context, b.DB, user)
 }

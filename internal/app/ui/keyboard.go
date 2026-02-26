@@ -15,17 +15,29 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-func MainMenuKeyboard(context tele.Context, user *bot.UserData) error {
+func MainMenuPlayerKeyboard(context tele.Context, user *bot.UserData, menuData *PlayerMenu) error {
+	menuText := fmt.Sprintf(`Menu
+		Player: %s
+		Faction: %s
+		%s
+		---
+		Resources:
+		%s
+		---
+		You have %d unanswered Master Requests`,
+		menuData.PlayerName,
+		menuData.FactionName,
+		menuData.FactionDescription,
+		menuData.FactionResources,
+		menuData.UnansweredMasterRequests)
 
-	if user.Role == bot.RoleMaster {
-		return context.Send("Some master info here", masterMenu())
-	}
+	return context.Send(menuText, playerMenu(menuData.UnansweredMasterRequests))
+}
 
-	if user.Role == bot.RolePlayer {
-		return context.Send("Some player info here", playerMenu())
-	}
+func MainMenuMasterKeyboard(context tele.Context, user *bot.UserData, menuData *MasterMenu) error {
+	menuText := fmt.Sprintf("Menu:\nMaster")
 
-	return context.Send("Your role is not supported, contact administrator")
+	return context.Send(menuText, masterMenu())
 }
 
 func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) *tele.ReplyMarkup {
@@ -119,15 +131,22 @@ func masterMenu() *tele.ReplyMarkup {
 	return menu
 }
 
-func playerMenu() *tele.ReplyMarkup {
+func playerMenu(unansweredMRCount int) *tele.ReplyMarkup {
 	menu := &tele.ReplyMarkup{}
 	btnSend := menu.Data("Send Message", sendmsgc.CBSend)
 	btnMessages := menu.Data("My Messages", listmsgc.CBGetMessageList)
-	btnMasterRequests := menu.Data("Last Master Request", listmstrreqc.CBGetMasterRequests)
+
+	masterRequestEmoji := "🟢"
+	if unansweredMRCount > 0 {
+		masterRequestEmoji = "🔴"
+	}
+	masterRequestText := fmt.Sprintf("%s Answer Master Request (%d unanswered) %s", masterRequestEmoji, unansweredMRCount, masterRequestEmoji)
+	btnMasterRequests := menu.Data(masterRequestText, listmstrreqc.CBGetMasterRequests)
+
 	menu.Inline(
+		menu.Row(btnMasterRequests),
 		menu.Row(btnSend),
 		menu.Row(btnMessages),
-		menu.Row(btnMasterRequests),
 	)
 	return menu
 }

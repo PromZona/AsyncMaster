@@ -41,6 +41,7 @@ func handleText(context tele.Context, s *Session) error {
 
 	text := context.Text()
 	s.MasterRequest.TextResponse = text
+	s.MasterRequest.IsAnswered = true
 
 	err := db.UpdateMasterRequest(s.DB, s.MasterRequest)
 	if err != nil {

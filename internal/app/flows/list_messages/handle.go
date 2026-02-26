@@ -6,6 +6,7 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
 	tele "gopkg.in/telebot.v4"
 )
@@ -63,5 +64,5 @@ func handleMessagePick(context tele.Context, s *Session, cbData string) error {
 
 func finilize(context tele.Context, s *Session, player *bot.UserData) error {
 	s.Done = true
-	return ui.MainMenuKeyboard(context, player.Role)
+	return common.GetMainMenuByRole(context, s.DB, player)
 }
