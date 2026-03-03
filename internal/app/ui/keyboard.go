@@ -7,6 +7,7 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 
 	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
+	listfctns "github.com/PromZona/AsyncMaster/internal/app/flows/list_factions/contract"
 	listmstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/list_master_requests/contract"
 	listmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
 	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
@@ -135,6 +136,7 @@ func playerMenu(unansweredMRCount int) *tele.ReplyMarkup {
 	menu := &tele.ReplyMarkup{}
 	btnSend := menu.Data("Send Message", sendmsgc.CBSend)
 	btnMessages := menu.Data("My Messages", listmsgc.CBGetMessageList)
+	btnFactions := menu.Data("Factions", listfctns.CBListFactions)
 
 	masterRequestEmoji := "🟢"
 	if unansweredMRCount > 0 {
@@ -147,6 +149,7 @@ func playerMenu(unansweredMRCount int) *tele.ReplyMarkup {
 		menu.Row(btnMasterRequests),
 		menu.Row(btnSend),
 		menu.Row(btnMessages),
+		menu.Row(btnFactions),
 	)
 	return menu
 }

@@ -43,6 +43,56 @@ func UpdateUser(e DBExecutor, user *bot.UserData) {
 	}
 }
 
+func GetUsersAll(e DBExecutor) ([]bot.UserData, error) {
+	var result []bot.UserData
+
+	rows, err := e.Query(`
+		SELECT
+			u.telegram_name,
+			COALESCE(player_name, '') AS player_name,
+			u.chat_id,
+			u.role,
+
+			f.id,
+			f.name,
+			f.description,
+			f.resources
+		FROM users u
+		JOIN factions f ON f.user_id = u.id
+		`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user bot.UserData
+		user.Faction = &bot.Faction{}
+
+		innerErr := rows.Scan(
+			&user.TelegramName,
+			&user.PlayerName,
+			&user.ChatID,
+			&user.Role,
+			&user.Faction.ID,
+			&user.Faction.Name,
+			&user.Faction.Description,
+			&user.Faction.Resources)
+		if innerErr != nil {
+			log.Print(err)
+			return nil, err
+		}
+		result = append(result, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Print(err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func GetUserByID(e DBExecutor, chatID int64) (*bot.UserData, error) {
 	var newUser bot.UserData
 	newUser.Faction = &bot.Faction{}
@@ -421,6 +471,7 @@ func CreateFaction(e DBExecutor, faction *bot.Faction) (*bot.Faction, error) {
 func GetFaction(e DBExecutor) {
 
 }
+
 func UpdateFaction(e DBExecutor) {
 
 }
