@@ -87,6 +87,9 @@ var UniqueToSessionFactory = map[string]SessionFactory{
 	sendmsgc.CBSend: func(db *sql.DB) bot.FlowSession {
 		return sendmessage.NewSession(db)
 	},
+	sendmsgc.CBSendEveryone: func(db *sql.DB) bot.FlowSession {
+		return sendmessage.NewSession(db)
+	},
 	mstrreqc.CBStartMasterRequest: func(db *sql.DB) bot.FlowSession {
 		return masterrequest.NewSession(db)
 	},

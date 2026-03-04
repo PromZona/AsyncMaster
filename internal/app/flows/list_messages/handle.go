@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
 	tele "gopkg.in/telebot.v4"
 )
@@ -46,23 +44,11 @@ func handleMessagePick(context tele.Context, s *Session, cbData string) error {
 	}
 	messageFromPlayerName := user_from.PlayerName
 
-	user_to, err := db.GetUserByID(s.DB, int64(transaction.To))
-	if err != nil {
-		return err
-	}
-	messageToPlayerName := user_to.PlayerName
-
-	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\nTo: %s\n\n %s",
+	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\n\n %s",
 		transaction.Message.Title,
 		messageFromPlayerName,
-		messageToPlayerName,
 		transaction.Message.Text)
 
-	context.Send(formatedMessage)
-	return finilize(context, s, user_to)
-}
-
-func finilize(context tele.Context, s *Session, player *bot.UserData) error {
 	s.Done = true
-	return common.GetMainMenuByRole(context, s.DB, player)
+	return context.Send(formatedMessage)
 }

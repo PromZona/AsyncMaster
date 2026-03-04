@@ -15,6 +15,7 @@ type Session struct {
 	UserState        State
 	DraftMessage     *bot.Message
 	DraftTransaction *bot.MessageTransaction
+	IsSendEveryone   bool
 	Done             bool
 }
 
@@ -28,7 +29,7 @@ func (s *Session) IsDone() bool {
 
 func (s *Session) IsSupportedCallback(cbUnique string) bool {
 	slice := []string{
-		contract.CBSend, contract.CBPlayerNames, contract.CBTitleNo, contract.CBTitleYes,
+		contract.CBSend, contract.CBPlayerNames, contract.CBTitleNo, contract.CBTitleYes, contract.CBSendEveryone,
 	}
 	return slices.Contains(slice, cbUnique)
 }
@@ -43,6 +44,9 @@ func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData
 		return handleNoTitle(context, s)
 	case contract.CBTitleYes:
 		return handleYesTitle(context, s)
+	case contract.CBSendEveryone:
+		s.IsSendEveryone = true
+		return handleInitialSend(context, s)
 	default:
 		return fmt.Errorf("sendmessage met unsupported <callback unique> while dispatching callback: %s", cbUnique)
 	}
@@ -65,6 +69,7 @@ func NewSession(db *sql.DB) *Session {
 		UserState:        FlowStart,
 		DraftMessage:     &bot.Message{},
 		DraftTransaction: &bot.MessageTransaction{},
+		IsSendEveryone:   false,
 		Done:             false,
 	}
 }

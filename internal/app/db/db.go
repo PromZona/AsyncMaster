@@ -6,7 +6,7 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 type DBExecutor interface {
@@ -229,10 +229,11 @@ func DeleteMessage() {
 
 func CreateMesssageTransaction(e DBExecutor, transaction *bot.MessageTransaction) (*bot.MessageTransaction, error) {
 	err := e.QueryRow("INSERT INTO message_transaction (from_chat, to_chat, message_id) VALUES ($1, $2, $3) RETURNING id, created_at",
-		transaction.From, transaction.To, transaction.Message.ID).
+		transaction.From, pq.Array(transaction.To), transaction.Message.ID).
 		Scan(&transaction.ID, &transaction.CreatedAt)
 
 	if err != nil {
+		log.Printf("SCAN ERROR: %#v\n", err)
 		return nil, err
 	}
 	return transaction, nil

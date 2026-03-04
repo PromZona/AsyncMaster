@@ -78,7 +78,7 @@ type MessageTransaction struct {
 	ID        int
 	CreatedAt time.Time
 	From      tele.ChatID
-	To        tele.ChatID
+	To        []tele.ChatID
 
 	Message *Message
 }

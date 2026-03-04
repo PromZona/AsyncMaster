@@ -10,6 +10,7 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
+	"gopkg.in/telebot.v4"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -39,6 +40,21 @@ func handleInitialSend(context tele.Context, s *Session) error {
 
 	s.DraftTransaction.From = tele.ChatID(chatID)
 
+	if s.IsSendEveryone {
+		_, ids, err := db.GetUserPlayerNamesAndChatID(s.DB)
+		if err != nil {
+			return err
+		}
+
+		chatids := make([]telebot.ChatID, len(ids))
+		for i, v := range ids {
+			chatids[i] = telebot.ChatID(v)
+		}
+		s.DraftTransaction.To = chatids
+		s.UserState = AwaitMessage
+		return context.Send("Write your message:")
+	}
+
 	playerNames, chatIDs, err := db.GetUserPlayerNamesAndChatID(s.DB)
 	if err != nil {
 		context.Send("Error happened while processing your request, contact administrator")
@@ -63,7 +79,7 @@ func handlePlayerName(context tele.Context, s *Session, cbData string) error {
 		return err
 	}
 
-	s.DraftTransaction.To = tele.ChatID(toChatID)
+	s.DraftTransaction.To = append(s.DraftTransaction.To, tele.ChatID(toChatID))
 	s.UserState = AwaitMessage
 	return context.Send("Write your message:")
 }
@@ -115,28 +131,23 @@ func finilize(context tele.Context, s *Session) error {
 		return err
 	}
 
-	user_from, err := db.GetUserByID(s.DB, int64(transaction.From))
+	userFrom, err := db.GetUserByID(s.DB, int64(transaction.From))
 	if err != nil {
 		return err
 	}
 
-	user_to, err := db.GetUserByID(s.DB, int64(transaction.To))
-	if err != nil {
-		return err
+	for _, toChatID := range transaction.To {
+		messageFromPlayerName := userFrom.PlayerName
+
+		formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\n\n %s",
+			message.Title,
+			messageFromPlayerName,
+			message.Text)
+
+		context.Bot().Send(toChatID, formatedMessage)
+
+		log.Printf("Send message succesfully. From: %d to %d, transaction id: %d", userFrom.ChatID, toChatID, transaction.ID)
 	}
-
-	messageFromPlayerName := user_from.PlayerName
-	messageToPlayerName := user_to.PlayerName
-
-	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\nTo: %s\n\n %s",
-		message.Title,
-		messageFromPlayerName,
-		messageToPlayerName,
-		message.Text)
-
-	context.Bot().Send(transaction.To, formatedMessage)
-
-	log.Printf("Player send message succesfully, transaction id: %d", transaction.ID)
 
 	context.Send("Message sent")
 	s.Done = true
