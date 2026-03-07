@@ -16,10 +16,17 @@ func handleStartFlow(context tele.Context, s *Session) error {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
 
-	playerNames, chatIDs, err := db.GetUserPlayerNamesAndChatID(s.DB)
+	playerNames, chatIDs, err := db.GetNamesAndChatIDsOfPlayers(s.DB)
 	if err != nil {
 		return err
 	}
+
+	if s.IsSendEveryone {
+		s.Resipients = append(s.Resipients, chatIDs...)
+		s.UserState = AwaitText
+		return context.Send("Type text which will be sent to players")
+	}
+
 	s.UserState = AwaitResipient
 	return context.Send("Pick a player to send to", ui.PlayerNamesKeyboard(playerNames, chatIDs))
 }
@@ -39,7 +46,7 @@ func handleResipient(context tele.Context, s *Session, cbData string) error {
 		return err
 	}
 
-	s.RequestData.To = tele.ChatID(toChatID)
+	s.Resipients = append(s.Resipients, toChatID)
 	s.UserState = AwaitText
 	return context.Send("Type text which will be sent to player")
 }
@@ -105,29 +112,34 @@ func finilize(context tele.Context, s *Session) error {
 		return fmt.Errorf("master request is nil while submiting data to database")
 	}
 
-	tx, err := s.DB.Begin()
-	if err != nil {
-		return err
-	}
+	for _, res := range s.Resipients {
 
-	masterRequest, err = db.CreateMasterRequest(tx, masterRequest)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+		masterRequest.To = tele.ChatID(res)
 
-	for _, value := range s.RollRequests {
-		_, err = db.CreateRollRequest(tx, value, masterRequest.ID)
+		tx, err := s.DB.Begin()
+		if err != nil {
+			return err
+		}
+
+		masterRequest, err = db.CreateMasterRequest(tx, masterRequest)
 		if err != nil {
 			tx.Rollback()
 			return err
 		}
-	}
-	masterRequest.RollRequests = s.RollRequests
 
-	err = tx.Commit()
-	if err != nil {
-		return err
+		for _, value := range s.RollRequests {
+			_, err = db.CreateRollRequest(tx, value, masterRequest.ID)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+		masterRequest.RollRequests = s.RollRequests
+
+		err = tx.Commit()
+		if err != nil {
+			return err
+		}
 	}
 
 	formattedMessage := fmt.Sprintf("MASTER REQUEST\n\n%s", masterRequest.TextRequest)

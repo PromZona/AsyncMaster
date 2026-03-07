@@ -11,11 +11,13 @@ import (
 )
 
 type Session struct {
-	DB           *sql.DB
-	UserState    State
-	Done         bool
-	RequestData  *bot.MasterRequest
-	RollRequests []*bot.RollRequest
+	DB             *sql.DB
+	UserState      State
+	Done           bool
+	RequestData    *bot.MasterRequest
+	RollRequests   []*bot.RollRequest
+	IsSendEveryone bool
+	Resipients     []int64
 }
 
 func (s *Session) Name() string {
@@ -24,7 +26,7 @@ func (s *Session) Name() string {
 
 func (s *Session) IsSupportedCallback(cb string) bool {
 	callbacks := []string{
-		contract.CBStartMasterRequest, contract.CBPlayerNames, contract.CBYes, contract.CBNo,
+		contract.CBStartMasterRequest, contract.CBStartMasterRequestEveryone, contract.CBPlayerNames, contract.CBYes, contract.CBNo,
 	}
 	return slices.Contains(callbacks, cb)
 }
@@ -36,6 +38,9 @@ func (s *Session) IsDone() bool {
 func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData string) error {
 	switch cbUnique {
 	case contract.CBStartMasterRequest:
+		return handleStartFlow(context, s)
+	case contract.CBStartMasterRequestEveryone:
+		s.IsSendEveryone = true
 		return handleStartFlow(context, s)
 	case contract.CBPlayerNames:
 		return handleResipient(context, s, cbData)
@@ -61,11 +66,13 @@ func (s *Session) DispatchText(context tele.Context) error {
 
 func NewSession(db *sql.DB) *Session {
 	return &Session{
-		DB:           db,
-		UserState:    FlowStart,
-		Done:         false,
-		RequestData:  &bot.MasterRequest{},
-		RollRequests: make([]*bot.RollRequest, 0),
+		DB:             db,
+		UserState:      FlowStart,
+		Done:           false,
+		RequestData:    &bot.MasterRequest{},
+		RollRequests:   make([]*bot.RollRequest, 0),
+		IsSendEveryone: false,
+		Resipients:     make([]int64, 0),
 	}
 }
 

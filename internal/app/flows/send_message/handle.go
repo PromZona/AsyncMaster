@@ -41,7 +41,7 @@ func handleInitialSend(context tele.Context, s *Session) error {
 	s.DraftTransaction.From = tele.ChatID(chatID)
 
 	if s.IsSendEveryone {
-		_, ids, err := db.GetUserPlayerNamesAndChatID(s.DB)
+		_, ids, err := db.GetNamesAndChatIDsOfAll(s.DB)
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func handleInitialSend(context tele.Context, s *Session) error {
 		return context.Send("Write your message:")
 	}
 
-	playerNames, chatIDs, err := db.GetUserPlayerNamesAndChatID(s.DB)
+	playerNames, chatIDs, err := db.GetNamesAndChatIDsOfAll(s.DB)
 	if err != nil {
 		context.Send("Error happened while processing your request, contact administrator")
 		return err

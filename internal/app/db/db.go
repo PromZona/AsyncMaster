@@ -165,9 +165,35 @@ func GetUserPlayerNames(e DBExecutor) ([]string, error) {
 	return result, nil
 }
 
-func GetUserPlayerNamesAndChatID(e DBExecutor) (names []string, chatIDs []int64, err error) {
+func GetNamesAndChatIDsOfAll(e DBExecutor) (names []string, chatIDs []int64, err error) {
 	var rows *sql.Rows
 	rows, err = e.Query("SELECT player_name, chat_id FROM users")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name string
+		var chatID int64
+		err = rows.Scan(&name, &chatID)
+		if err != nil {
+			return nil, nil, err
+		}
+		names = append(names, name)
+		chatIDs = append(chatIDs, chatID)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	return names, chatIDs, nil
+}
+
+// Returns only players chat ids, without master
+func GetNamesAndChatIDsOfPlayers(e DBExecutor) (names []string, chatIDs []int64, err error) {
+	var rows *sql.Rows
+	rows, err = e.Query("SELECT player_name, chat_id FROM users WHERE role = $1", bot.RolePlayer)
 	if err != nil {
 		return nil, nil, err
 	}

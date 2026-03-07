@@ -125,11 +125,12 @@ func cancelButton() tele.Btn {
 func masterMenu() *tele.ReplyMarkup {
 	menu := &tele.ReplyMarkup{}
 	btnSendMasters := menu.Data("Send Message", sendmsgc.CBSend)
-	btnSendEveryone := menu.Data("Send Message Everyone", sendmsgc.CBSendEveryone)
+	btnSendEveryone := menu.Data("Send Message to Everyone", sendmsgc.CBSendEveryone)
 	btnMasterRequest := menu.Data("Master Request", mstrreqc.CBStartMasterRequest)
+	btnMasterRequestEveryone := menu.Data("Master Request to Everyone", mstrreqc.CBStartMasterRequestEveryone)
 	menu.Inline(
 		menu.Row(btnSendMasters, btnSendEveryone),
-		menu.Row(btnMasterRequest),
+		menu.Row(btnMasterRequest, btnMasterRequestEveryone),
 	)
 	return menu
 }
