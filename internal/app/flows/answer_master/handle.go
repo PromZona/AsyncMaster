@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	tele "gopkg.in/telebot.v4"
 )
@@ -41,7 +42,7 @@ func handleText(context tele.Context, s *Session) error {
 
 	text := context.Text()
 	s.MasterRequest.TextResponse = text
-	s.MasterRequest.IsAnswered = true
+	s.MasterRequest.State = bot.MRAnswered
 
 	err := db.UpdateMasterRequest(s.DB, s.MasterRequest)
 	if err != nil {

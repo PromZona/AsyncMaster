@@ -21,7 +21,7 @@ func (s *Session) Name() string {
 
 func (s *Session) IsSupportedCallback(cb string) bool {
 	callbacks := []string{
-		contract.CBGetMasterRequests,
+		contract.CBGetMasterRequests, contract.CBGetAnsweredMasterRequest, contract.CBMarkAsRead,
 	}
 	return slices.Contains(callbacks, cb)
 }
@@ -34,6 +34,10 @@ func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData
 	switch cbUnique {
 	case contract.CBGetMasterRequests:
 		return handleStartFlow(context, s)
+	case contract.CBGetAnsweredMasterRequest:
+		return handleGetFirstAnswered(context, s)
+	case contract.CBMarkAsRead:
+		return handleMarkAsRead(context, s, cbData)
 	default:
 		return fmt.Errorf("met unexpected callback unique: %s", cbUnique)
 	}

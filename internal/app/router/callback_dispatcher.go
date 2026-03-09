@@ -108,6 +108,12 @@ var UniqueToSessionFactory = map[string]SessionFactory{
 	listmstrreqc.CBGetMasterRequests: func(db *sql.DB) bot.FlowSession {
 		return listmasterrequests.NewSession(db)
 	},
+	listmstrreqc.CBGetAnsweredMasterRequest: func(db *sql.DB) bot.FlowSession {
+		return listmasterrequests.NewSession(db)
+	},
+	listmstrreqc.CBMarkAsRead: func(db *sql.DB) bot.FlowSession {
+		return listmasterrequests.NewSession(db)
+	},
 	listfctnsc.CBListFactions: func(db *sql.DB) bot.FlowSession {
 		return listfactions.NewSession(db)
 	},

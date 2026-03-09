@@ -52,14 +52,18 @@ func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) *tele.ReplyMarku
 
 	for i, name := range playerNames {
 		dataString := fmt.Sprintf("%s:%d", name, chatIDs[i])
-		btnPlayerNames = append(btnPlayerNames, result.Data(name, sendmsgc.CBPlayerNames, dataString))
+		btnPlayerNames = append(
+			btnPlayerNames,
+			result.Data(name, sendmsgc.CBPlayerNames, dataString))
 	}
 
-	result.Inline(
-		result.Row(btnPlayerNames...),
-		result.Row(cancelButton()),
-	)
+	rows := []tele.Row{}
+	if len(btnPlayerNames) > 0 {
+		rows = append(rows, result.Row(btnPlayerNames...))
+	}
+	rows = append(rows, result.Row(cancelButton()))
 
+	result.Inline(rows...)
 	return result
 }
 
@@ -114,6 +118,17 @@ func UserMessagesKeyboard(transactions []*bot.MessageTransaction) *tele.ReplyMar
 	return menu
 }
 
+func MasterRequestMarkRead(requestID int64) *tele.ReplyMarkup {
+	menu := &tele.ReplyMarkup{}
+
+	data := fmt.Sprintf("%d", requestID)
+	btnMarkRead := menu.Data("Mark as Read", listmstrreqc.CBMarkAsRead, data)
+
+	menu.Inline(menu.Row(btnMarkRead))
+
+	return menu
+}
+
 func cancelButton() tele.Btn {
 	btnCancel := tele.Btn{
 		Unique: "cancel",
@@ -128,9 +143,12 @@ func masterMenu() *tele.ReplyMarkup {
 	btnSendEveryone := menu.Data("Send Message to Everyone", sendmsgc.CBSendEveryone)
 	btnMasterRequest := menu.Data("Master Request", mstrreqc.CBStartMasterRequest)
 	btnMasterRequestEveryone := menu.Data("Master Request to Everyone", mstrreqc.CBStartMasterRequestEveryone)
+	btnCheckAnsweredMasterRequest := menu.Data("Answered Request", listmstrreqc.CBGetAnsweredMasterRequest)
+
 	menu.Inline(
 		menu.Row(btnSendMasters, btnSendEveryone),
 		menu.Row(btnMasterRequest, btnMasterRequestEveryone),
+		menu.Row(btnCheckAnsweredMasterRequest),
 	)
 	return menu
 }

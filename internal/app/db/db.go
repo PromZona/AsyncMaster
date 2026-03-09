@@ -97,6 +97,11 @@ func GetUserByID(e DBExecutor, chatID int64) (*bot.UserData, error) {
 	var newUser bot.UserData
 	newUser.Faction = &bot.Faction{}
 
+	var factionID sql.NullInt32
+	var factionName sql.NullString
+	var factionDescription sql.NullString
+	var factionResources sql.NullString
+
 	queryResult := e.QueryRow(`
 		SELECT
 			u.telegram_name,
@@ -109,7 +114,7 @@ func GetUserByID(e DBExecutor, chatID int64) (*bot.UserData, error) {
 			f.description,
 			f.resources
 		FROM users u
-		JOIN factions f ON f.user_id = u.id
+		LEFT JOIN factions f ON f.user_id = u.id
 		WHERE chat_id = $1
 		`, chatID)
 	err := queryResult.Scan(
@@ -117,10 +122,21 @@ func GetUserByID(e DBExecutor, chatID int64) (*bot.UserData, error) {
 		&newUser.PlayerName,
 		&newUser.ChatID,
 		&newUser.Role,
-		&newUser.Faction.ID,
-		&newUser.Faction.Name,
-		&newUser.Faction.Description,
-		&newUser.Faction.Resources)
+		&factionID,
+		&factionName,
+		&factionDescription,
+		&factionResources)
+
+	if factionID.Valid {
+		newUser.Faction.ID = int(factionID.Int32)
+		newUser.Faction.Name = factionName.String
+		newUser.Faction.Description = factionDescription.String
+		newUser.Faction.Resources = factionResources.String
+
+	} else {
+		newUser.Faction = nil
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -398,44 +414,249 @@ func CreateMasterRequest(e DBExecutor, request *bot.MasterRequest) (*bot.MasterR
 }
 
 func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
-	var request bot.MasterRequest
-	queryResult := e.QueryRow("SELECT id, to_player, text_request, created_at, is_answered FROM master_requests WHERE id = $1", id)
-	err := queryResult.Scan(&request.ID, &request.To, &request.TextRequest, &request.CreatedAt, &request.IsAnswered)
+	rows, err := e.Query(`
+		SELECT
+		 mr.id,
+		 mr.to_player,
+		 mr.text_request,
+		 mr.created_at,
+		 mr.updated_at,
+		 mr.state,
+
+		 r.id AS roll_id,
+		 r.created_at AS roll_created_at,
+		 r.title,
+		 r.dice_count,
+		 r.dice_sides,
+		 r.roll_result
+		FROM master_requests mr
+		LEFT JOIN roll_requests r ON mr.id = r.transaction_id 
+		WHERE id = $1`,
+		id)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
+
+	var request bot.MasterRequest
+	var rolls []*bot.RollRequest
+
+	for rows.Next() {
+		var id sql.NullInt32
+		var createdAt sql.NullTime
+		var title sql.NullString
+		var diceCount sql.NullInt32
+		var diceSides sql.NullInt32
+		var rollResult sql.NullInt32
+
+		err := rows.Scan(
+			&request.ID,
+			&request.To,
+			&request.TextRequest,
+			&request.CreatedAt,
+			&request.UpdatedAt,
+			&request.State,
+			&id,
+			&createdAt,
+			&title,
+			&diceCount,
+			&diceSides,
+			&rollResult)
+		if err != nil {
+			return nil, err
+		}
+
+		if id.Valid {
+			rolls = append(rolls, &bot.RollRequest{
+				ID:         int(id.Int32),
+				CreatedAt:  createdAt.Time,
+				Title:      title.String,
+				DiceCount:  int(diceCount.Int32),
+				DiceSides:  int(diceSides.Int32),
+				RollResult: int(rollResult.Int32),
+			})
+		}
+	}
+	request.RollRequests = rolls
 	return &request, nil
 }
 
 func GetFirstUnansweredMasterRequest(e DBExecutor, chatID int64) (*bot.MasterRequest, error) {
-	var request bot.MasterRequest
-	queryResult := e.QueryRow(`
+	rows, err := e.Query(`
 		SELECT
-		 id,
-		 to_player,
-		 text_request,
-		 created_at,
-		 is_answered
-		FROM master_requests
-		WHERE to_player = $1 AND is_answered = false
+		 mr.id,
+		 mr.to_player,
+		 mr.text_request,
+		 mr.created_at,
+		 mr.updated_at,
+		 mr.state,
+
+		 r.id AS roll_id,
+		 r.created_at AS roll_created_at,
+		 r.title,
+		 r.dice_count,
+		 r.dice_sides,
+		 r.roll_result
+		FROM master_requests mr
+		LEFT JOIN roll_requests r ON mr.id = r.transaction_id 
+		WHERE to_player = $1 AND state = $2
 		ORDER BY created_at ASC`,
-		chatID)
-	err := queryResult.Scan(&request.ID, &request.To, &request.TextRequest, &request.CreatedAt, &request.IsAnswered)
+		chatID, bot.MRUnasnwered)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
+
+	var request bot.MasterRequest
+	var rolls []*bot.RollRequest
+
+	for rows.Next() {
+		var id sql.NullInt32
+		var createdAt sql.NullTime
+		var title sql.NullString
+		var diceCount sql.NullInt32
+		var diceSides sql.NullInt32
+		var rollResult sql.NullInt32
+
+		err := rows.Scan(
+			&request.ID,
+			&request.To,
+			&request.TextRequest,
+			&request.CreatedAt,
+			&request.UpdatedAt,
+			&request.State,
+			&id,
+			&createdAt,
+			&title,
+			&diceCount,
+			&diceSides,
+			&rollResult)
+		if err != nil {
+			return nil, err
+		}
+
+		if id.Valid {
+			rolls = append(rolls, &bot.RollRequest{
+				ID:         int(id.Int32),
+				CreatedAt:  createdAt.Time,
+				Title:      title.String,
+				DiceCount:  int(diceCount.Int32),
+				DiceSides:  int(diceSides.Int32),
+				RollResult: int(rollResult.Int32),
+			})
+		}
+	}
+	request.RollRequests = rolls
+	return &request, nil
+}
+
+func GetFirstAnsweredMasterRequest(e DBExecutor) (*bot.MasterRequest, error) {
+
+	rows, err := e.Query(`
+		SELECT
+		 mr.id,
+		 mr.to_player,
+		 mr.text_request,
+		 mr.created_at,
+		 mr.updated_at,
+		 mr.state,
+
+		 r.id AS roll_id,
+		 r.created_at AS roll_created_at,
+		 r.title,
+		 r.dice_count,
+		 r.dice_sides,
+		 r.roll_result
+		FROM
+		(
+    		SELECT *
+    		FROM master_requests
+    		WHERE state = $1
+    		ORDER BY updated_at ASC
+    		LIMIT 1
+		) mr
+		LEFT JOIN roll_requests r ON mr.id = r.transaction_id`,
+		bot.MRAnswered)
+	if err != nil {
+		return nil, err
+	}
+
+	var request bot.MasterRequest
+	var rolls []*bot.RollRequest
+
+	for rows.Next() {
+		var id sql.NullInt32
+		var createdAt sql.NullTime
+		var title sql.NullString
+		var diceCount sql.NullInt32
+		var diceSides sql.NullInt32
+		var rollResult sql.NullInt32
+
+		err := rows.Scan(
+			&request.ID,
+			&request.To,
+			&request.TextRequest,
+			&request.CreatedAt,
+			&request.UpdatedAt,
+			&request.State,
+			&id,
+			&createdAt,
+			&title,
+			&diceCount,
+			&diceSides,
+			&rollResult)
+		if err != nil {
+			return nil, err
+		}
+
+		if id.Valid {
+			rolls = append(rolls, &bot.RollRequest{
+				ID:         int(id.Int32),
+				CreatedAt:  createdAt.Time,
+				Title:      title.String,
+				DiceCount:  int(diceCount.Int32),
+				DiceSides:  int(diceSides.Int32),
+				RollResult: int(rollResult.Int32),
+			})
+		}
+	}
+	request.RollRequests = rolls
 	return &request, nil
 }
 
 func UpdateMasterRequest(e DBExecutor, masterRequest *bot.MasterRequest) error {
-	_, err := e.Exec("UPDATE master_requests SET to_player = $1, text_request = $2, text_response = $3, is_answered = $4 WHERE id = $5",
+
+	/*
+		WHAT DOES NOT WORK:
+		- Player answering with text for master request.
+		WHAT TO DO:
+		- Delete all testing db data. Let's start clean.
+		- Track down if there are some missing logic in handling this case.
+	*/
+
+	_, err := e.Exec(`
+		UPDATE
+		 master_requests
+		SET
+			to_player = $1,
+			text_request = $2,
+			text_response = $3,
+			state = $4
+		WHERE
+			id = $5`,
 		masterRequest.To,
 		masterRequest.TextRequest,
 		masterRequest.TextResponse,
-		masterRequest.IsAnswered,
+		masterRequest.State,
 		masterRequest.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateMasterRequestState(e DBExecutor, masterRequestID int64, state bot.MasterRequestState) error {
+	_, err := e.Exec("UPDATE master_requests SET state = $1 WHERE id = $2",
+		state,
+		masterRequestID)
 	if err != nil {
 		return err
 	}
@@ -517,12 +738,12 @@ func GetPlayerMenuData(e DBExecutor, chatID int64) *ui.PlayerMenu {
 			(
         		SELECT COUNT(*)
         		FROM master_requests mr
-        		WHERE mr.to_player = $1 AND mr.is_answered = FALSE
+        		WHERE mr.to_player = $1 AND mr.state = $2
     		) AS unanswered_master_requests_count
 		FROM users u
 		JOIN factions f
 			ON f.user_id = u.id
-		`, chatID).Scan(
+		`, chatID, bot.MRUnasnwered).Scan(
 		&result.PlayerName,
 		&result.FactionName,
 		&result.FactionDescription,

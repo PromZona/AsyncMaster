@@ -83,13 +83,22 @@ type MessageTransaction struct {
 	Message *Message
 }
 
+type MasterRequestState int
+
+const (
+	MRUnasnwered      MasterRequestState = 0
+	MRAnswered        MasterRequestState = 1
+	MRCheckedByMaster MasterRequestState = 2
+)
+
 type MasterRequest struct {
 	ID           int
 	CreatedAt    time.Time
+	UpdatedAt    time.Time
 	To           tele.ChatID
 	TextRequest  string
 	TextResponse string
-	IsAnswered   bool
+	State        MasterRequestState
 
 	RollRequests []*RollRequest
 }
