@@ -4,11 +4,11 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
-func DispatchText(context tele.Context, b *bot.BotData) error {
-	chatID := context.Chat().ID
+func DispatchText(context runtime.Context, b *bot.BotData) error {
+	chatID := context.ChatID()
 
 	session := b.GetUserSession(chatID)
 

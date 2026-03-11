@@ -5,17 +5,17 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/flows/master"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/registration"
 	"github.com/PromZona/AsyncMaster/internal/app/middleware"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
-func Register(b *tele.Bot, botData *bot.BotData) {
+func Register(rt runtime.Runtime, botData *bot.BotData) {
 
-	b.Use(middleware.ErrorRecovery(botData))
-	b.Use(middleware.RegistrationCheck(botData))
+	rt.Use(middleware.ErrorRecovery(botData))
+	rt.Use(middleware.RegistrationCheck(botData))
 
-	b.Handle("/start", func(ctx tele.Context) error { return registration.StartMessage(ctx) })
-	b.Handle("/elevate", func(ctx tele.Context) error { return master.HandleElevateToMaster(ctx, botData) })
+	rt.HandleCommand("/start", func(ctx runtime.Context) error { return registration.StartMessage(ctx) })
+	rt.HandleCommand("/elevate", func(ctx runtime.Context) error { return master.HandleElevateToMaster(ctx, botData) })
 
-	b.Handle(tele.OnText, func(ctx tele.Context) error { return DispatchText(ctx, botData) })
-	b.Handle(tele.OnCallback, func(ctx tele.Context) error { return DispatchCallback(ctx, botData) })
+	rt.HandleText(func(ctx runtime.Context) error { return DispatchText(ctx, botData) })
+	rt.HandleCallback(func(ctx runtime.Context) error { return DispatchCallback(ctx, botData) })
 }

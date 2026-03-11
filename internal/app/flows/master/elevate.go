@@ -6,12 +6,12 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
-func HandleElevateToMaster(context tele.Context, b *bot.BotData) error {
+func HandleElevateToMaster(context runtime.Context, b *bot.BotData) error {
 	args := context.Args()
-	chatID := context.Chat().ID
+	chatID := context.ChatID()
 	session := b.GetUserSession(chatID)
 
 	if session != nil {

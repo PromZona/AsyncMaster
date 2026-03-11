@@ -1,19 +1,18 @@
 package middleware
 
 import (
-	tele "gopkg.in/telebot.v4"
-
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/registration"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
-func RegistrationCheck(b *bot.BotData) tele.MiddlewareFunc {
-	return func(next tele.HandlerFunc) tele.HandlerFunc {
-		return func(context tele.Context) error {
-			chatID := context.Chat().ID
+func RegistrationCheck(b *bot.BotData) runtime.Middleware {
+	return func(next runtime.Handler) runtime.Handler {
+		return func(context runtime.Context) error {
+			chatID := context.ChatID()
 
-			if !db.EnsureUserExist(b.DB, context.Chat().ID) {
+			if !db.EnsureUserExist(b.DB, context.ChatID()) {
 				session := b.GetUserSession(chatID)
 				if session == nil {
 					session = &registration.Session{

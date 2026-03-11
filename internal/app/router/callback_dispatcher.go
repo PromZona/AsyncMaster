@@ -8,6 +8,7 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 
 	answermaster "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master"
 	listfactions "github.com/PromZona/AsyncMaster/internal/app/flows/list_factions"
@@ -22,15 +23,13 @@ import (
 	listmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
 	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
 	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
-
-	tele "gopkg.in/telebot.v4"
 )
 
-func DispatchCallback(context tele.Context, b *bot.BotData) error {
+func DispatchCallback(context runtime.Context, b *bot.BotData) error {
 	context.Respond()
 
-	chatID := context.Chat().ID
-	rawCallbackData := context.Callback().Data
+	chatID := context.ChatID()
+	rawCallbackData := context.Callback()
 	cbUnique, cbData := parseCallbackDataString(rawCallbackData)
 
 	if cbUnique == common.CBCancel {

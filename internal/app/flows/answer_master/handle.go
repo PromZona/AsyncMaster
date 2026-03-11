@@ -6,10 +6,10 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
-func handleReplyToMaster(context tele.Context, s *Session, cbData string) error {
+func handleReplyToMaster(context runtime.Context, s *Session, cbData string) error {
 	if s.UserState != Idle {
 		return context.Send("Expected other action")
 	}
@@ -30,7 +30,7 @@ func handleReplyToMaster(context tele.Context, s *Session, cbData string) error 
 	return context.Send("Write your reply:")
 }
 
-func handleText(context tele.Context, s *Session) error {
+func handleText(context runtime.Context, s *Session) error {
 	if s.UserState != AwaitText {
 		return context.Send("Expected other action")
 	}
@@ -53,7 +53,7 @@ func handleText(context tele.Context, s *Session) error {
 	return context.Send("Answer accepted. Please, roll requested dices if there are any left")
 }
 
-func handleRoll(context tele.Context, s *Session, cbData string) error {
+func handleRoll(context runtime.Context, s *Session, cbData string) error {
 	if s.UserState != Idle {
 		return context.Send("Expected other action")
 	}

@@ -5,12 +5,11 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
-
-	tele "gopkg.in/telebot.v4"
 )
 
-func GetMainMenuByRole(context tele.Context, DB *sql.DB, user *bot.UserData) error {
+func GetMainMenuByRole(context runtime.Context, DB *sql.DB, user *bot.UserData) error {
 	if user.Role == bot.RolePlayer {
 		menuData := db.GetPlayerMenuData(DB, user.ChatID)
 		return ui.MainMenuPlayerKeyboard(context, user, menuData)

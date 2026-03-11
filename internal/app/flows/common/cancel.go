@@ -3,14 +3,14 @@ package common
 import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
 const CBCancel = "cancel"
 
-func HandleCancelButton(ctx tele.Context, b *bot.BotData) error {
+func HandleCancelButton(ctx runtime.Context, b *bot.BotData) error {
 	ctx.Respond()
-	chatID := ctx.Chat().ID
+	chatID := ctx.ChatID()
 	b.ClearUserCache(chatID)
 
 	user, err := db.GetUserByID(b.DB, chatID)

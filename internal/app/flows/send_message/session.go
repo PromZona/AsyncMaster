@@ -7,7 +7,7 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
 type Session struct {
@@ -34,7 +34,7 @@ func (s *Session) IsSupportedCallback(cbUnique string) bool {
 	return slices.Contains(slice, cbUnique)
 }
 
-func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData string) error {
+func (s *Session) DispatchCallback(context runtime.Context, cbUnique string, cbData string) error {
 	switch cbUnique {
 	case contract.CBSend:
 		return handleInitialSend(context, s)
@@ -52,7 +52,7 @@ func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData
 	}
 }
 
-func (s *Session) DispatchText(context tele.Context) error {
+func (s *Session) DispatchText(context runtime.Context) error {
 	switch s.UserState {
 	case AwaitMessage:
 		return handleMessageText(context, s)

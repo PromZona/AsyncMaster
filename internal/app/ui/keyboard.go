@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 
 	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
 	listfctns "github.com/PromZona/AsyncMaster/internal/app/flows/list_factions/contract"
@@ -12,11 +13,9 @@ import (
 	listmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
 	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
 	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
-
-	tele "gopkg.in/telebot.v4"
 )
 
-func MainMenuPlayerKeyboard(context tele.Context, user *bot.UserData, menuData *PlayerMenu) error {
+func MainMenuPlayerKeyboard(context runtime.Context, user *bot.UserData, menuData *PlayerMenu) error {
 	menuText := fmt.Sprintf(`Menu
 		Player: %s
 		Faction: %s
@@ -35,142 +34,152 @@ func MainMenuPlayerKeyboard(context tele.Context, user *bot.UserData, menuData *
 	return context.Send(menuText, playerMenu(menuData.UnansweredMasterRequests))
 }
 
-func MainMenuMasterKeyboard(context tele.Context, user *bot.UserData, menuData *MasterMenu) error {
+func MainMenuMasterKeyboard(context runtime.Context, user *bot.UserData, menuData *MasterMenu) error {
 	menuText := fmt.Sprintf("Menu:\nMaster")
 
 	return context.Send(menuText, masterMenu())
 }
 
-func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) *tele.ReplyMarkup {
+func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) runtime.Keyboard {
 	if len(playerNames) != len(chatIDs) {
 		log.Print("Error while creating keyboard, playerNames are not the same size as chatIDs: ", len(playerNames), "; ", len(chatIDs))
 		return nil
 	}
 
-	result := &tele.ReplyMarkup{}
-	var btnPlayerNames []tele.Btn
+	var btnPlayerNames []runtime.Button
 
 	for i, name := range playerNames {
 		dataString := fmt.Sprintf("%s:%d", name, chatIDs[i])
 		btnPlayerNames = append(
 			btnPlayerNames,
-			result.Data(name, sendmsgc.CBPlayerNames, dataString))
+			runtime.Button{Text: name, Unique: sendmsgc.CBPlayerNames, Data: dataString})
 	}
 
-	rows := []tele.Row{}
+	rows := []runtime.Row{}
 	if len(btnPlayerNames) > 0 {
-		rows = append(rows, result.Row(btnPlayerNames...))
+		rows = append(rows, runtime.Row(btnPlayerNames))
 	}
-	rows = append(rows, result.Row(cancelButton()))
+	rows = append(rows, runtime.Row{cancelButton()})
 
-	result.Inline(rows...)
-	return result
+	keyboard := runtime.Keyboard(rows)
+	return keyboard
 }
 
-func YesNoKeyboard() *tele.ReplyMarkup {
-	result := &tele.ReplyMarkup{}
+func YesNoKeyboard() runtime.Keyboard {
+	btnNo := runtime.Button{Text: "No", Unique: "no"}
+	btnYes := runtime.Button{Text: "Yes", Unique: "yes"}
 
-	btnNo := result.Data("No", "no")
-	btnYes := result.Data("Yes", "yes")
+	rows := []runtime.Row{}
+	rows = append(rows, runtime.Row{
+		btnNo,
+		btnYes,
+	})
+	rows = append(rows, runtime.Row{cancelButton()})
 
-	result.Inline(
-		result.Row(btnNo, btnYes),
-		result.Row(cancelButton()),
-	)
-
-	return result
+	keyboard := runtime.Keyboard(rows)
+	return keyboard
 }
 
-func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) *tele.ReplyMarkup {
-	menu := &tele.ReplyMarkup{}
+func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) runtime.Keyboard {
+	allRows := make([]runtime.Row, 0, len(masterRequest.RollRequests)+1)
 
-	allRows := make([]tele.Row, 0, len(masterRequest.RollRequests)+1)
-
-	btnReply := menu.Data("Reply to Master", answrmstrc.CBReplyToMaster, fmt.Sprintf("%d", masterRequest.ID))
-	allRows = append(allRows, menu.Row(btnReply))
+	btnReply := runtime.Button{Text: "Reply to Master", Unique: answrmstrc.CBReplyToMaster, Data: fmt.Sprintf("%d", masterRequest.ID)}
+	allRows = append(allRows, runtime.Row{btnReply})
 
 	for _, roll := range masterRequest.RollRequests {
 		text := fmt.Sprintf("%dd%d: %s", roll.DiceCount, roll.DiceSides, roll.Title)
 		data := fmt.Sprintf("%d", roll.ID)
-		btnRoll := menu.Data(text, answrmstrc.CBRollRequest, data)
-		allRows = append(allRows, menu.Row(btnRoll))
+		btnRoll := runtime.Button{Text: text, Unique: answrmstrc.CBRollRequest, Data: data}
+		allRows = append(allRows, runtime.Row{btnRoll})
 	}
-	menu.Inline(allRows...)
 
-	return menu
+	keyboard := runtime.Keyboard(allRows)
+	return keyboard
 }
 
-func UserMessagesKeyboard(transactions []*bot.MessageTransaction) *tele.ReplyMarkup {
-	menu := &tele.ReplyMarkup{
-		ResizeKeyboard: true,
-	}
-
-	allRows := make([]tele.Row, 0, len(transactions)+1)
+func UserMessagesKeyboard(transactions []*bot.MessageTransaction) runtime.Keyboard {
+	allRows := make([]runtime.Row, 0, len(transactions)+1)
 	for _, t := range transactions {
 		text := fmt.Sprintf("%s", t.Message.Title)
 		data := fmt.Sprintf("%d", t.ID)
-		btnMessage := menu.Data(text, listmsgc.CBGetMessage, data)
-		allRows = append(allRows, menu.Row(btnMessage))
+		btnMessage := runtime.Button{Text: text, Unique: listmsgc.CBGetMessage, Data: data}
+		allRows = append(allRows, runtime.Row{btnMessage})
 	}
 
-	allRows = append(allRows, menu.Row(cancelButton()))
-	menu.Inline(allRows...)
-	return menu
+	allRows = append(allRows, runtime.Row{cancelButton()})
+	keyboard := runtime.Keyboard(allRows)
+	return keyboard
 }
 
-func MasterRequestMarkRead(requestID int64) *tele.ReplyMarkup {
-	menu := &tele.ReplyMarkup{}
-
+func MasterRequestMarkRead(requestID int64) runtime.Keyboard {
 	data := fmt.Sprintf("%d", requestID)
-	btnMarkRead := menu.Data("Mark as Read", listmstrreqc.CBMarkAsRead, data)
+	btnMarkRead := runtime.Button{Text: "Mark as Read", Unique: listmstrreqc.CBMarkAsRead, Data: data}
 
-	menu.Inline(menu.Row(btnMarkRead))
-
-	return menu
+	keyboard := runtime.Keyboard{runtime.Row{btnMarkRead}}
+	return keyboard
 }
 
-func cancelButton() tele.Btn {
-	btnCancel := tele.Btn{
+func cancelButton() runtime.Button {
+	btnCancel := runtime.Button{
 		Unique: "cancel",
 		Text:   "Cancel",
 	}
 	return btnCancel
 }
 
-func masterMenu() *tele.ReplyMarkup {
-	menu := &tele.ReplyMarkup{}
-	btnSendMasters := menu.Data("Send Message", sendmsgc.CBSend)
-	btnSendEveryone := menu.Data("Send Message to Everyone", sendmsgc.CBSendEveryone)
-	btnMasterRequest := menu.Data("Master Request", mstrreqc.CBStartMasterRequest)
-	btnMasterRequestEveryone := menu.Data("Master Request to Everyone", mstrreqc.CBStartMasterRequestEveryone)
-	btnCheckAnsweredMasterRequest := menu.Data("Answered Request", listmstrreqc.CBGetAnsweredMasterRequest)
+func masterMenu() runtime.Keyboard {
 
-	menu.Inline(
-		menu.Row(btnSendMasters, btnSendEveryone),
-		menu.Row(btnMasterRequest, btnMasterRequestEveryone),
-		menu.Row(btnCheckAnsweredMasterRequest),
-	)
-	return menu
+	btnSendMasters := runtime.Button{
+		Text:   "Send Message",
+		Unique: sendmsgc.CBSend,
+	}
+	btnSendEveryone := runtime.Button{
+		Text:   "Send Message to Everyone",
+		Unique: sendmsgc.CBSendEveryone,
+	}
+	btnMasterRequest := runtime.Button{
+		Text:   "Master Request",
+		Unique: mstrreqc.CBStartMasterRequest,
+	}
+	btnMasterRequestEveryone := runtime.Button{
+		Text:   "Master Request to Everyone",
+		Unique: mstrreqc.CBStartMasterRequestEveryone,
+	}
+	btnCheckAnsweredMasterRequest := runtime.Button{
+		Text:   "Answered Request",
+		Unique: listmstrreqc.CBGetAnsweredMasterRequest,
+	}
+
+	keyboard := runtime.Keyboard{
+		{btnSendMasters, btnSendEveryone},
+		{btnMasterRequest, btnMasterRequestEveryone},
+		{btnCheckAnsweredMasterRequest},
+	}
+	return keyboard
 }
 
-func playerMenu(unansweredMRCount int) *tele.ReplyMarkup {
-	menu := &tele.ReplyMarkup{}
-	btnSend := menu.Data("Send Message", sendmsgc.CBSend)
-	btnMessages := menu.Data("My Messages", listmsgc.CBGetMessageList)
-	btnFactions := menu.Data("Factions", listfctns.CBListFactions)
+func playerMenu(unansweredMRCount int) runtime.Keyboard {
+	btnSend := runtime.Button{Text: "Send Message", Unique: sendmsgc.CBSend}
+	btnMessages := runtime.Button{Text: "My Messages", Unique: listmsgc.CBGetMessageList}
+	btnFactions := runtime.Button{Text: "Factions", Unique: listfctns.CBListFactions}
 
 	masterRequestEmoji := "🟢"
 	if unansweredMRCount > 0 {
 		masterRequestEmoji = "🔴"
 	}
-	masterRequestText := fmt.Sprintf("%s Answer Master Request (%d unanswered) %s", masterRequestEmoji, unansweredMRCount, masterRequestEmoji)
-	btnMasterRequests := menu.Data(masterRequestText, listmstrreqc.CBGetMasterRequests)
+	masterRequestText := fmt.Sprintf("%s Answer Master Request (%d unanswered) %s",
+		masterRequestEmoji,
+		unansweredMRCount,
+		masterRequestEmoji)
+	btnMasterRequests := runtime.Button{Text: masterRequestText, Unique: listmstrreqc.CBGetMasterRequests}
 
-	menu.Inline(
-		menu.Row(btnMasterRequests),
-		menu.Row(btnSend),
-		menu.Row(btnMessages),
-		menu.Row(btnFactions),
-	)
-	return menu
+	rows := runtime.Row{
+		btnMasterRequests,
+		btnSend,
+		btnMessages,
+		btnFactions,
+	}
+
+	keyboard := runtime.Keyboard{rows}
+	return keyboard
 }

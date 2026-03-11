@@ -5,16 +5,16 @@ import (
 	"strconv"
 
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
-	tele "gopkg.in/telebot.v4"
 )
 
-func handleStartFlow(context tele.Context, s *Session) error {
+func handleStartFlow(context runtime.Context, s *Session) error {
 	if s.UserState != FlowStart {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
 
-	messages, err := db.GetLastMessageTransactions(s.DB, context.Chat().ID)
+	messages, err := db.GetLastMessageTransactions(s.DB, context.ChatID())
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func handleStartFlow(context tele.Context, s *Session) error {
 	return context.Send("Your last 10 messages, pick one", ui.UserMessagesKeyboard(messages))
 }
 
-func handleMessagePick(context tele.Context, s *Session, cbData string) error {
+func handleMessagePick(context runtime.Context, s *Session, cbData string) error {
 	if s.UserState != AwaitMessagePick {
 		return context.Send("This action is not available right now, finish previous action first")
 	}

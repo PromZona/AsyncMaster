@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
-func handleListFactions(context tele.Context, s *Session) error {
+func handleListFactions(context runtime.Context, s *Session) error {
 
 	data, err := db.GetUsersAll(s.DB)
 	if err != nil {

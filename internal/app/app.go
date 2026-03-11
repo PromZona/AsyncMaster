@@ -2,18 +2,20 @@ package app
 
 import (
 	"database/sql"
+	"flag"
 	"log"
 	"os"
 	"time"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/router"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	"github.com/joho/godotenv"
 	tele "gopkg.in/telebot.v4"
 )
 
 type App struct {
-	TeleBot *tele.Bot
+	Runtime runtime.Runtime
 	BotData *bot.BotData
 	DB      *sql.DB
 }
@@ -24,6 +26,9 @@ func Init() (*App, error) {
 		log.Fatal("error loading .env file")
 		return nil, err
 	}
+
+	isMock := flag.Bool("mock", false, "mocking runtime")
+	flag.Parse()
 
 	psqlInfo := os.Getenv("DB_CONNECTION_STRING")
 	db, err := sql.Open("postgres", psqlInfo)
@@ -39,22 +44,31 @@ func Init() (*App, error) {
 	}
 	log.Print("Database successfully connected!")
 
-	pref := tele.Settings{
-		Token:  os.Getenv("BOT_TOKEN"),
-		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
-	}
+	var rt runtime.Runtime
+	if *isMock {
+		panic("Not yet")
+	} else {
+		pref := tele.Settings{
+			Token:  os.Getenv("BOT_TOKEN"),
+			Poller: &tele.LongPoller{Timeout: 10 * time.Second},
+		}
 
-	b, err := tele.NewBot(pref)
-	if err != nil {
-		log.Fatal("failed to create tele.Bot")
-		return nil, err
+		b, err := tele.NewBot(pref)
+		if err != nil {
+			log.Fatal("failed to create tele.Bot")
+			return nil, err
+		}
+
+		rt = &runtime.TelebotRuntime{
+			Bot: b,
+		}
 	}
 
 	botData := bot.BotInit(db)
-	router.Register(b, botData)
+	router.Register(rt, botData)
 
 	app := &App{
-		TeleBot: b,
+		Runtime: rt,
 		BotData: botData,
 		DB:      db,
 	}
@@ -64,5 +78,5 @@ func Init() (*App, error) {
 
 func (app *App) Start() {
 	defer app.DB.Close()
-	app.TeleBot.Start()
+	app.Runtime.Start()
 }

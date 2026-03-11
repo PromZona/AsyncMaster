@@ -6,14 +6,14 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
-func StartMessage(context tele.Context) error {
+func StartMessage(context runtime.Context) error {
 	return context.Send("Hello, enter password to log in into the System")
 }
 
-func handlePassword(context tele.Context, s *Session) error {
+func handlePassword(context runtime.Context, s *Session) error {
 	passwordPlayer := os.Getenv("BOT_USER_PASSWORD")
 	passwordMaster := os.Getenv("BOT_MASTER_PASSWORD")
 
@@ -23,8 +23,8 @@ func handlePassword(context tele.Context, s *Session) error {
 	}
 
 	s.User = &bot.UserData{
-		ChatID:       context.Chat().ID,
-		TelegramName: context.Sender().FirstName,
+		ChatID:       context.ChatID(),
+		TelegramName: context.FirstName(),
 		PlayerName:   "",
 		Faction:      &bot.Faction{},
 	}
@@ -44,7 +44,7 @@ func handlePassword(context tele.Context, s *Session) error {
 	}
 }
 
-func handlePlayerName(context tele.Context, s *Session) error {
+func handlePlayerName(context runtime.Context, s *Session) error {
 	playerName := context.Text()
 
 	s.User.PlayerName = playerName
@@ -56,7 +56,7 @@ func handlePlayerName(context tele.Context, s *Session) error {
 	return context.Send("In this game you control a faction of your own. And you charachter is a leader\nNow you need to create your faction\nWrite name for a faction:")
 }
 
-func handleFactionName(context tele.Context, s *Session) error {
+func handleFactionName(context runtime.Context, s *Session) error {
 	factionName := context.Text()
 
 	s.User.Faction.Name = factionName
@@ -64,14 +64,14 @@ func handleFactionName(context tele.Context, s *Session) error {
 	return context.Send("Now describe your faction. 1 paragraph of text:")
 }
 
-func handleFactionDescription(context tele.Context, s *Session) error {
+func handleFactionDescription(context runtime.Context, s *Session) error {
 	factionDesc := context.Text()
 
 	s.User.Faction.Description = factionDesc
 	return finilize(context, s)
 }
 
-func finilize(context tele.Context, s *Session) error {
+func finilize(context runtime.Context, s *Session) error {
 	err := db.CreateUser(s.DB, s.User)
 	if err != nil {
 		return err

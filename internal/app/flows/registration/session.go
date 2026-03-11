@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
 type Session struct {
@@ -27,11 +27,11 @@ func (s *Session) IsSupportedCallback(cbUnique string) bool {
 	return false
 }
 
-func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData string) error {
+func (s *Session) DispatchCallback(context runtime.Context, cbUnique string, cbData string) error {
 	return fmt.Errorf("registration callback does not support callbacks. cbUnique: %s, cbData: %s", cbUnique, cbData)
 }
 
-func (s *Session) DispatchText(context tele.Context) error {
+func (s *Session) DispatchText(context runtime.Context) error {
 	switch s.UserState {
 	case AwaitPassword:
 		return handlePassword(context, s)

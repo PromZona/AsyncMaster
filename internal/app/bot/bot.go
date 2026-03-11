@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	_ "github.com/lib/pq"
-	tele "gopkg.in/telebot.v4"
 )
 
 type BotData struct {
@@ -29,8 +29,8 @@ type FlowSession interface {
 	Name() string
 	IsSupportedCallback(string) bool
 	IsDone() bool
-	DispatchCallback(context tele.Context, cbUnique string, cbData string) error
-	DispatchText(context tele.Context) error
+	DispatchCallback(context runtime.Context, cbUnique string, cbData string) error
+	DispatchText(context runtime.Context) error
 }
 
 type UserData struct {
@@ -77,8 +77,8 @@ func (msg Message) MessageHash() string {
 type MessageTransaction struct {
 	ID        int
 	CreatedAt time.Time
-	From      tele.ChatID
-	To        []tele.ChatID
+	From      int64
+	To        []int64
 
 	Message *Message
 }
@@ -95,7 +95,7 @@ type MasterRequest struct {
 	ID           int
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
-	To           tele.ChatID
+	To           int64
 	TextRequest  string
 	TextResponse string
 	State        MasterRequestState

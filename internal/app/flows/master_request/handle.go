@@ -7,11 +7,11 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
-	tele "gopkg.in/telebot.v4"
 )
 
-func handleStartFlow(context tele.Context, s *Session) error {
+func handleStartFlow(context runtime.Context, s *Session) error {
 	if s.UserState != FlowStart {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
@@ -31,7 +31,7 @@ func handleStartFlow(context tele.Context, s *Session) error {
 	return context.Send("Pick a player to send to", ui.PlayerNamesKeyboard(playerNames, chatIDs))
 }
 
-func handleResipient(context tele.Context, s *Session, cbData string) error {
+func handleResipient(context runtime.Context, s *Session, cbData string) error {
 	if s.UserState != AwaitResipient {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
@@ -51,7 +51,7 @@ func handleResipient(context tele.Context, s *Session, cbData string) error {
 	return context.Send("Type text which will be sent to player")
 }
 
-func handleText(context tele.Context, s *Session) error {
+func handleText(context runtime.Context, s *Session) error {
 	if s.UserState != AwaitText {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
@@ -62,7 +62,7 @@ func handleText(context tele.Context, s *Session) error {
 	return context.Send("Do you want to add dice request?", ui.YesNoKeyboard())
 }
 
-func handleYes(context tele.Context, s *Session) error {
+func handleYes(context runtime.Context, s *Session) error {
 	if s.UserState != AwaitRollDecision {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
@@ -71,7 +71,7 @@ func handleYes(context tele.Context, s *Session) error {
 	return sendRollQuestion(context)
 }
 
-func handleNo(context tele.Context, s *Session) error {
+func handleNo(context runtime.Context, s *Session) error {
 	if s.UserState != AwaitRollDecision {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
@@ -79,7 +79,7 @@ func handleNo(context tele.Context, s *Session) error {
 	return finilize(context, s)
 }
 
-func handleRoll(context tele.Context, s *Session) error {
+func handleRoll(context runtime.Context, s *Session) error {
 	if s.UserState != AwaitRoll {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
@@ -106,7 +106,7 @@ func handleRoll(context tele.Context, s *Session) error {
 	return context.Send("Do you want to add dice request?", ui.YesNoKeyboard())
 }
 
-func finilize(context tele.Context, s *Session) error {
+func finilize(context runtime.Context, s *Session) error {
 	masterRequest := s.RequestData
 	if masterRequest == nil {
 		return fmt.Errorf("master request is nil while submiting data to database")
@@ -114,7 +114,7 @@ func finilize(context tele.Context, s *Session) error {
 
 	for _, res := range s.Resipients {
 
-		masterRequest.To = tele.ChatID(res)
+		masterRequest.To = res
 
 		tx, err := s.DB.Begin()
 		if err != nil {
@@ -143,12 +143,12 @@ func finilize(context tele.Context, s *Session) error {
 	}
 
 	formattedMessage := fmt.Sprintf("MASTER REQUEST\n\n%s", masterRequest.TextRequest)
-	context.Bot().Send(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
+	context.SendTo(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
 
 	s.Done = true
 	return context.Send("Message send to resipient")
 }
 
-func sendRollQuestion(context tele.Context) error {
+func sendRollQuestion(context runtime.Context) error {
 	return context.Send("Write a roll in a format: <count>d<dice> <name of the role>\nExample: 1d6 Roll on money")
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
-	tele "gopkg.in/telebot.v4"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
 type Session struct {
@@ -35,7 +35,7 @@ func (s *Session) IsDone() bool {
 	return s.Done
 }
 
-func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData string) error {
+func (s *Session) DispatchCallback(context runtime.Context, cbUnique string, cbData string) error {
 	switch cbUnique {
 	case contract.CBStartMasterRequest:
 		return handleStartFlow(context, s)
@@ -53,7 +53,7 @@ func (s *Session) DispatchCallback(context tele.Context, cbUnique string, cbData
 	}
 }
 
-func (s *Session) DispatchText(context tele.Context) error {
+func (s *Session) DispatchText(context runtime.Context) error {
 	switch s.UserState {
 	case AwaitText:
 		return handleText(context, s)

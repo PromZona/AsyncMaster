@@ -9,17 +9,16 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
-	"gopkg.in/telebot.v4"
-	tele "gopkg.in/telebot.v4"
 )
 
-func handleMessageText(context tele.Context, s *Session) error {
-	chatID := context.Chat().ID
+func handleMessageText(context runtime.Context, s *Session) error {
+	chatID := context.ChatID()
 
 	message := &bot.Message{
 		Title:     "",
-		MessageID: strconv.FormatInt(int64(context.Message().ID), 10),
+		MessageID: strconv.FormatInt(context.MessageID(), 10),
 		ChatID:    chatID,
 		Text:      context.Text(),
 	}
@@ -30,15 +29,15 @@ func handleMessageText(context tele.Context, s *Session) error {
 	return context.Send("Do you want to add title for a message?", ui.YesNoKeyboard())
 }
 
-func handleMessageTitle(context tele.Context, s *Session) error {
-	s.DraftMessage.Title = context.Message().Text
+func handleMessageTitle(context runtime.Context, s *Session) error {
+	s.DraftMessage.Title = context.MessageText()
 	return finilize(context, s)
 }
 
-func handleInitialSend(context tele.Context, s *Session) error {
-	chatID := context.Chat().ID
+func handleInitialSend(context runtime.Context, s *Session) error {
+	chatID := context.ChatID()
 
-	s.DraftTransaction.From = tele.ChatID(chatID)
+	s.DraftTransaction.From = chatID
 
 	if s.IsSendEveryone {
 		_, ids, err := db.GetNamesAndChatIDsOfAll(s.DB)
@@ -46,9 +45,9 @@ func handleInitialSend(context tele.Context, s *Session) error {
 			return err
 		}
 
-		chatids := make([]telebot.ChatID, len(ids))
+		chatids := make([]int64, len(ids))
 		for i, v := range ids {
-			chatids[i] = telebot.ChatID(v)
+			chatids[i] = v
 		}
 		s.DraftTransaction.To = chatids
 		s.UserState = AwaitMessage
@@ -64,7 +63,7 @@ func handleInitialSend(context tele.Context, s *Session) error {
 	return context.Send("Names:", ui.PlayerNamesKeyboard(playerNames, chatIDs))
 }
 
-func handlePlayerName(context tele.Context, s *Session, cbData string) error {
+func handlePlayerName(context runtime.Context, s *Session, cbData string) error {
 	if s.UserState != AwaitResipient {
 		return context.Send("This button is not available right now, please finish your previous action")
 	}
@@ -79,12 +78,12 @@ func handlePlayerName(context tele.Context, s *Session, cbData string) error {
 		return err
 	}
 
-	s.DraftTransaction.To = append(s.DraftTransaction.To, tele.ChatID(toChatID))
+	s.DraftTransaction.To = append(s.DraftTransaction.To, toChatID)
 	s.UserState = AwaitMessage
 	return context.Send("Write your message:")
 }
 
-func handleYesTitle(context tele.Context, s *Session) error {
+func handleYesTitle(context runtime.Context, s *Session) error {
 	if s.UserState != AwaitTitleDecision {
 		return context.Send("This button is not available right now, please finish your previous action")
 	}
@@ -92,15 +91,15 @@ func handleYesTitle(context tele.Context, s *Session) error {
 	return context.Send("Write title for your message:")
 }
 
-func handleNoTitle(context tele.Context, s *Session) error {
+func handleNoTitle(context runtime.Context, s *Session) error {
 	if s.UserState != AwaitTitleDecision {
 		return context.Send("This button is not available right now, please finish your previous action")
 	}
 	return finilize(context, s)
 }
 
-func finilize(context tele.Context, s *Session) error {
-	chatID := context.Chat().ID
+func finilize(context runtime.Context, s *Session) error {
+	chatID := context.ChatID()
 
 	transaction := s.DraftTransaction
 	message := s.DraftMessage
@@ -144,7 +143,7 @@ func finilize(context tele.Context, s *Session) error {
 			messageFromPlayerName,
 			message.Text)
 
-		context.Bot().Send(toChatID, formatedMessage)
+		context.SendTo(toChatID, formatedMessage)
 
 		log.Printf("Send message succesfully. From: %d to %d, transaction id: %d", userFrom.ChatID, toChatID, transaction.ID)
 	}

@@ -7,30 +7,30 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
+	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
-	tele "gopkg.in/telebot.v4"
 )
 
 // Player wants to answer master
-func handleStartFlow(context tele.Context, s *Session) error {
+func handleStartFlow(context runtime.Context, s *Session) error {
 	if s.UserState != FlowStart {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
 
-	masterRequest, err := db.GetFirstUnansweredMasterRequest(s.DB, context.Chat().ID)
+	masterRequest, err := db.GetFirstUnansweredMasterRequest(s.DB, context.ChatID())
 	if err != nil {
 		return err
 	}
 
 	formattedMessage := fmt.Sprintf("MASTER REQUEST\n\n%s", masterRequest.TextRequest)
-	_, err = context.Bot().Send(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
+	err = context.SendTo(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
 
 	s.Done = true
 	return err
 }
 
 // Master wants to check first Answered request
-func handleGetFirstAnswered(context tele.Context, s *Session) error {
+func handleGetFirstAnswered(context runtime.Context, s *Session) error {
 	if s.UserState != FlowStart {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
@@ -63,7 +63,7 @@ func handleGetFirstAnswered(context tele.Context, s *Session) error {
 	return err
 }
 
-func handleMarkAsRead(context tele.Context, s *Session, cbData string) error {
+func handleMarkAsRead(context runtime.Context, s *Session, cbData string) error {
 	if s.UserState != FlowStart {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
