@@ -20,7 +20,7 @@ func handleMessageText(context runtime.Context, s *Session) error {
 		Title:     "",
 		MessageID: strconv.FormatInt(context.MessageID(), 10),
 		ChatID:    chatID,
-		Text:      context.Text(),
+		Text:      context.MessageText(),
 	}
 
 	s.DraftMessage = message

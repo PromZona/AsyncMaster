@@ -40,7 +40,7 @@ func handleText(context runtime.Context, s *Session) error {
 		return fmt.Errorf("master request is nil while trying to write text into it")
 	}
 
-	text := context.Text()
+	text := context.MessageText()
 	s.MasterRequest.TextResponse = text
 	s.MasterRequest.State = bot.MRAnswered
 

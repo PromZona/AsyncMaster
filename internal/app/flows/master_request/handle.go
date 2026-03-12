@@ -56,7 +56,7 @@ func handleText(context runtime.Context, s *Session) error {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
 
-	s.RequestData.TextRequest = context.Text()
+	s.RequestData.TextRequest = context.MessageText()
 
 	s.UserState = AwaitRollDecision
 	return context.Send("Do you want to add dice request?", ui.YesNoKeyboard())
@@ -84,7 +84,7 @@ func handleRoll(context runtime.Context, s *Session) error {
 		return context.Send("This action is not available right now, finish previous action first")
 	}
 
-	args := strings.SplitAfterN(context.Text(), " ", 2)
+	args := strings.SplitAfterN(context.MessageText(), " ", 2)
 	if len(args) != 2 {
 		return context.Send(fmt.Sprintf("Expected 2 arguments, but received: %d", len(args)))
 	}

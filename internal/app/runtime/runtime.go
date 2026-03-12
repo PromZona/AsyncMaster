@@ -3,7 +3,6 @@ package runtime
 type Context interface {
 	ChatID() int64
 	FirstName() string
-	Text() string
 	Callback() string
 	Send(string, ...Keyboard) error
 	SendTo(id int64, text string, k ...Keyboard) error

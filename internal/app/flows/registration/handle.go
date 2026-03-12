@@ -17,7 +17,7 @@ func handlePassword(context runtime.Context, s *Session) error {
 	passwordPlayer := os.Getenv("BOT_USER_PASSWORD")
 	passwordMaster := os.Getenv("BOT_MASTER_PASSWORD")
 
-	password := context.Text()
+	password := context.MessageText()
 	if password != passwordMaster && password != passwordPlayer {
 		return StartMessage(context)
 	}
@@ -45,7 +45,7 @@ func handlePassword(context runtime.Context, s *Session) error {
 }
 
 func handlePlayerName(context runtime.Context, s *Session) error {
-	playerName := context.Text()
+	playerName := context.MessageText()
 
 	s.User.PlayerName = playerName
 	if s.User.Role == bot.RoleMaster {
@@ -57,7 +57,7 @@ func handlePlayerName(context runtime.Context, s *Session) error {
 }
 
 func handleFactionName(context runtime.Context, s *Session) error {
-	factionName := context.Text()
+	factionName := context.MessageText()
 
 	s.User.Faction.Name = factionName
 	s.UserState = AwaitFactionDescription
@@ -65,7 +65,7 @@ func handleFactionName(context runtime.Context, s *Session) error {
 }
 
 func handleFactionDescription(context runtime.Context, s *Session) error {
-	factionDesc := context.Text()
+	factionDesc := context.MessageText()
 
 	s.User.Faction.Description = factionDesc
 	return finilize(context, s)

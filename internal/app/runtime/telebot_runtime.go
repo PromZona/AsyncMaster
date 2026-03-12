@@ -17,10 +17,6 @@ func (t *TeleContext) FirstName() string {
 	return t.ctx.Sender().FirstName
 }
 
-func (t *TeleContext) Text() string {
-	return t.ctx.Text()
-}
-
 func (t *TeleContext) Callback() string {
 	return t.ctx.Callback().Data
 }

@@ -46,7 +46,7 @@ func Init() (*App, error) {
 
 	var rt runtime.Runtime
 	if *isMock {
-		panic("Not yet")
+		rt = runtime.NewMockRuntime()
 	} else {
 		pref := tele.Settings{
 			Token:  os.Getenv("BOT_TOKEN"),
