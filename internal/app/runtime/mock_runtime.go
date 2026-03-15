@@ -16,6 +16,61 @@ type MockContext struct {
 	messageText string
 }
 
+type MockRuntime struct {
+	middlewares    []Middleware
+	userManager    MockUserManager
+	handlerManager HandlerManager
+	messageManager MessageManager
+}
+
+type HandlerManager struct {
+	HandleCallback Handler
+	HandleText     Handler
+	HandleCommand  Handler
+}
+
+// MockUserManager We are mocking telegram users.
+// The most important part of the mock is creating ChatID, that will be used
+type MockUserManager struct {
+	Users        []MockUser
+	UnusedChatID int64
+}
+
+type MessageManager struct {
+	Messages        []Message
+	UnusedMessageID int64
+}
+
+type Message struct {
+	ID     int64
+	Text   string
+	ChatID int64
+	Name   string
+}
+
+type MockUser struct {
+	ChatID       int64
+	TelegramName string
+	PlayerName   string
+}
+
+type Command struct {
+	Command   CommandType
+	Args      [5]string
+	ArgsCount int
+
+	// is argument in quotes: /user John "Create Sword" -> {false, false, true}
+	IsTextArgs [5]bool
+}
+
+type CommandType int
+
+const (
+	CTServer CommandType = 0
+	CTUser   CommandType = 1
+	CTExit   CommandType = 2
+)
+
 func (c *MockContext) ChatID() int64 {
 	return c.chatID
 }
@@ -26,10 +81,19 @@ func (c *MockContext) Callback() string {
 	return c.callback
 }
 
-func (c *MockContext) Send(string, ...Keyboard) error {
+func (c *MockContext) Send(text string, k ...Keyboard) error {
+	fmt.Printf("[BotReply]: %s\n", text)
+	for _, keyboard := range k {
+		for _, row := range keyboard {
+			for _, btn := range row {
+				fmt.Printf("%s [%s | %s]\n", btn.Text, btn.Unique, btn.Data)
+			}
+		}
+	}
 	return nil
 }
 func (c *MockContext) SendTo(id int64, text string, k ...Keyboard) error {
+	fmt.Print("SendTo received")
 	return nil
 }
 
@@ -48,17 +112,12 @@ func (c *MockContext) MessageText() string {
 	return c.messageText
 }
 
-type MockRuntime struct {
-	middlewares []Middleware
-	mock        Mock
-	userManager MockUserManager
-}
-
 func NewMockRuntime() *MockRuntime {
 	return &MockRuntime{
-		middlewares: make([]Middleware, 0),
-		mock:        Mock{},
-		userManager: MockUserManager{},
+		middlewares:    make([]Middleware, 0),
+		userManager:    MockUserManager{},
+		handlerManager: HandlerManager{},
+		messageManager: MessageManager{},
 	}
 }
 
@@ -66,11 +125,12 @@ func (mr *MockRuntime) Use(m Middleware) {
 	mr.middlewares = append(mr.middlewares, m)
 }
 func (mr *MockRuntime) HandleText(h Handler) {
-	mr.apply(h)
-
+	chain := mr.apply(h)
+	mr.handlerManager.HandleText = chain
 }
-func (mr *MockRuntime) HandleCallback(Handler) {
-
+func (mr *MockRuntime) HandleCallback(h Handler) {
+	chain := mr.apply(h)
+	mr.handlerManager.HandleCallback = chain
 }
 func (mr *MockRuntime) HandleCommand(string, Handler) {
 
@@ -97,12 +157,12 @@ func (mr *MockRuntime) Start() error {
 		case CTServer:
 			err := processServerCommand(command, &mr.userManager)
 			if err != nil {
-				return err
+				fmt.Printf("%s\n", err)
 			}
 		case CTUser:
-			err := processUserCommand(command)
+			err := processUserCommand(command, &mr.userManager, &mr.handlerManager, &mr.messageManager)
 			if err != nil {
-				return err
+				fmt.Printf("%s\n", err)
 			}
 
 		case CTExit:
@@ -120,18 +180,37 @@ func (mr *MockRuntime) Start() error {
 	return nil
 }
 
-type CommandType int
+func (m *MockUserManager) createUser(telegramName string, playerName string) {
+	m.Users = append(m.Users, MockUser{
+		ChatID:       m.UnusedChatID,
+		TelegramName: telegramName,
+		PlayerName:   playerName,
+	})
+	m.UnusedChatID++
+}
 
-const (
-	CTServer CommandType = 0
-	CTUser   CommandType = 1
-	CTExit   CommandType = 2
-)
+func (m *MockUserManager) getUser(name string) *MockUser {
+	for _, u := range m.Users {
+		if u.PlayerName == name {
+			return &u
+		}
+		if u.TelegramName == name {
+			return &u
+		}
+	}
+	return nil
+}
 
-type Command struct {
-	Command   CommandType
-	Args      [5]string
-	ArgsCount int
+func (m *MessageManager) createMessage(text string, chatID int64, name string) int64 {
+	msg := Message{
+		ID:     m.UnusedMessageID,
+		Text:   text,
+		ChatID: chatID,
+		Name:   name,
+	}
+	m.Messages = append(m.Messages, msg)
+	m.UnusedMessageID++
+	return msg.ID
 }
 
 func parseCommandLine(input string) (Command, error) {
@@ -162,6 +241,9 @@ func parseCommandLine(input string) (Command, error) {
 	for _, c := range input {
 		switch c {
 		case '"':
+			if isInsideQuotes {
+				result.IsTextArgs[wordsCount-1] = true
+			}
 			isInsideQuotes = !isInsideQuotes
 		case ' ':
 			if isInsideQuotes {
@@ -210,34 +292,49 @@ func processServerCommand(command Command, userManager *MockUserManager) error {
 		}
 		userManager.createUser(command.Args[1], command.Args[2])
 		fmt.Printf("User created\n")
+	default:
+		return fmt.Errorf("server unknown command, %s", serverCommand)
 	}
 
 	return nil
 }
 
-func processUserCommand(command Command) error {
-	return nil
-}
+func processUserCommand(command Command, userManager *MockUserManager, handlers *HandlerManager, messages *MessageManager) error {
+	if command.ArgsCount < 2 {
+		return fmt.Errorf("expected user command args")
+	}
 
-type MockUserManager struct {
-	Users        []MockUser
-	UnusedChatID int64
-}
+	name := command.Args[0]
+	user := userManager.getUser(name)
+	if user == nil {
+		return fmt.Errorf("user %s does not exist", name)
+	}
 
-type MockUser struct {
-	ChatID       int64
-	TelegramName string
-	PlayerName   string
-}
+	isText := command.IsTextArgs[1]
+	if isText {
+		// TODO: Handle Commands through text. When we have command in text
+		// /user John "/elevate"
+		text := command.Args[1]
+		id := messages.createMessage(text, user.ChatID, user.TelegramName)
+		err := handlers.HandleText(&MockContext{
+			chatID:      user.ChatID,
+			firstName:   user.PlayerName,
+			callback:    "",
+			args:        []string{},
+			messageID:   id,
+			messageText: text,
+		})
+		return err
+	}
 
-func (m *MockUserManager) createUser(telegramName string, playerName string) {
-	m.Users = append(m.Users, MockUser{
-		ChatID:       m.UnusedChatID,
-		TelegramName: telegramName,
-		PlayerName:   playerName,
+	cb := command.Args[1]
+	err := handlers.HandleCallback(&MockContext{
+		chatID:      user.ChatID,
+		firstName:   user.PlayerName,
+		callback:    cb,
+		args:        []string{},
+		messageID:   0,
+		messageText: "",
 	})
-	m.UnusedChatID++
-}
-
-type Mock struct {
+	return err
 }

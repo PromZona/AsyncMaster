@@ -73,26 +73,29 @@ type TelebotRuntime struct {
 }
 
 func (t *TelebotRuntime) HandleText(h Handler) {
-	t.apply(h)
+	chain := t.apply(h)
 
 	t.Bot.Handle(tele.OnText, func(ctx tele.Context) error {
-		return h(&TeleContext{ctx: ctx})
+		cont := &TeleContext{ctx: ctx}
+		return chain(cont)
 	})
 }
 
 func (t *TelebotRuntime) HandleCallback(h Handler) {
-	t.apply(h)
+	chain := t.apply(h)
 
 	t.Bot.Handle(tele.OnCallback, func(ctx tele.Context) error {
-		return h(&TeleContext{ctx: ctx})
+		cont := &TeleContext{ctx: ctx}
+		return chain(cont)
 	})
 }
 
 func (t *TelebotRuntime) HandleCommand(command string, h Handler) {
-	t.apply(h)
+	chain := t.apply(h)
 
 	t.Bot.Handle(command, func(ctx tele.Context) error {
-		return h(&TeleContext{ctx: ctx})
+		cont := &TeleContext{ctx: ctx}
+		return chain(cont)
 	})
 }
 

@@ -23,7 +23,6 @@ type Runtime interface {
 type Handler func(Context) error
 type Middleware func(Handler) Handler
 
-// btnSend := menu.Data("Send Message", sendmsgc.CBSend)
 type Button struct {
 	Unique string
 	Text   string
