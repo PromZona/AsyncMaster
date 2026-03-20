@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/PromZona/AsyncMaster/internal/app"
@@ -18,8 +19,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	fmt.Printf("main")
-
 	application, err = app.InitTesting()
 	if err != nil {
 		fmt.Printf("Testing: Failed initialize application\n%s", err)
@@ -60,7 +59,6 @@ func TestFactionCreation(t *testing.T) {
 	// TEST: EXECUTING LOGIC
 	//
 	input := []string{
-		`/server delete_all_users`,
 		`/server create_user John Vitus`,
 		`/server create_user Victor Horrow`,
 		`/user John "pepega26"`,
@@ -103,4 +101,44 @@ func TestFactionCreation(t *testing.T) {
 
 func TestFactionGet(t *testing.T) {
 
+	//
+	// TEST: CLEANING BEFORE
+	//
+	err := TruncateAllTablesDB(application.DB)
+	if err != nil {
+		t.Fatal("Can not clean DB and start testing")
+	}
+	rt := application.Runtime.(*runtime.MockRuntime)
+	rt.UserManager.DeleteAllUsers()
+
+	//
+	// TEST: EXECUTING LOGIC
+	//
+	input := []string{
+		`/server create_user John Vitus`,
+		`/server create_user Victor Horrow`,
+		`/user John "pepega26"`,
+		`/user John "Vitus"`,
+		`/user John "Tigers"`,
+		`/user John "Stripe tigers. Very powerful"`,
+		`/user Victor "pepega26"`,
+		`/user Victor "Horrow"`,
+		`/user Victor "Necro Guild"`,
+		`/user Victor "Super scary necromancers. And a lot of money"`,
+		`/user John list_factions`,
+	}
+	for _, cmd := range input {
+		err, _ = runtime.ExecuteCommand(rt, cmd)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	//
+	// TEST: EVALUATION
+	//
+	last := rt.MessageManager.Messages[len(rt.MessageManager.Messages)-1]
+	if !strings.Contains(last.Text, "Necro Guild") {
+		t.Fatal("failed to find guild in a message")
+	}
 }
