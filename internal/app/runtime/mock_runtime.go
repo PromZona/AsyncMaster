@@ -14,13 +14,14 @@ type MockContext struct {
 	args        []string
 	messageID   int64
 	messageText string
+	runtime     *MockRuntime
 }
 
 type MockRuntime struct {
 	middlewares    []Middleware
-	userManager    MockUserManager
-	handlerManager HandlerManager
-	messageManager MessageManager
+	UserManager    MockUserManager
+	HandlerManager HandlerManager
+	MessageManager MessageManager
 }
 
 type HandlerManager struct {
@@ -42,10 +43,11 @@ type MessageManager struct {
 }
 
 type Message struct {
-	ID     int64
-	Text   string
-	ChatID int64
-	Name   string
+	ID           int64
+	Text         string
+	ChatID       int64
+	Name         string
+	IsFromPlayer bool
 }
 
 type MockUser struct {
@@ -90,6 +92,8 @@ func (c *MockContext) Send(text string, k ...Keyboard) error {
 			}
 		}
 	}
+
+	c.runtime.MessageManager.createMessage(text, c.chatID, c.firstName, false)
 	return nil
 }
 func (c *MockContext) SendTo(id int64, text string, k ...Keyboard) error {
@@ -115,10 +119,38 @@ func (c *MockContext) MessageText() string {
 func NewMockRuntime() *MockRuntime {
 	return &MockRuntime{
 		middlewares:    make([]Middleware, 0),
-		userManager:    MockUserManager{},
-		handlerManager: HandlerManager{},
-		messageManager: MessageManager{},
+		UserManager:    MockUserManager{},
+		HandlerManager: HandlerManager{},
+		MessageManager: MessageManager{},
 	}
+}
+
+func ExecuteCommand(rt *MockRuntime, input string) (error, bool) {
+	command, err := parseCommandLine(input)
+	if err != nil {
+		return err, false
+	}
+
+	isExit := false
+	switch command.Command {
+	case CTServer:
+		err := processServerCommand(command, &rt.UserManager)
+		if err != nil {
+			fmt.Printf("%s\n", err)
+		}
+	case CTUser:
+		err := processUserCommand(rt, command)
+		if err != nil {
+			fmt.Printf("%s\n", err)
+		}
+
+	case CTExit:
+		isExit = true
+	}
+	if isExit {
+		return nil, true
+	}
+	return nil, false
 }
 
 func (mr *MockRuntime) Use(m Middleware) {
@@ -126,11 +158,11 @@ func (mr *MockRuntime) Use(m Middleware) {
 }
 func (mr *MockRuntime) HandleText(h Handler) {
 	chain := mr.apply(h)
-	mr.handlerManager.HandleText = chain
+	mr.HandlerManager.HandleText = chain
 }
 func (mr *MockRuntime) HandleCallback(h Handler) {
 	chain := mr.apply(h)
-	mr.handlerManager.HandleCallback = chain
+	mr.HandlerManager.HandleCallback = chain
 }
 func (mr *MockRuntime) HandleCommand(string, Handler) {
 
@@ -147,27 +179,11 @@ func (mr *MockRuntime) Start() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		input := scanner.Text()
-		command, err := parseCommandLine(input)
+		err, isExit := ExecuteCommand(mr, input)
 		if err != nil {
 			return err
 		}
 
-		isExit := false
-		switch command.Command {
-		case CTServer:
-			err := processServerCommand(command, &mr.userManager)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-			}
-		case CTUser:
-			err := processUserCommand(command, &mr.userManager, &mr.handlerManager, &mr.messageManager)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-			}
-
-		case CTExit:
-			isExit = true
-		}
 		if isExit {
 			break
 		}
@@ -201,12 +217,13 @@ func (m *MockUserManager) getUser(name string) *MockUser {
 	return nil
 }
 
-func (m *MessageManager) createMessage(text string, chatID int64, name string) int64 {
+func (m *MessageManager) createMessage(text string, chatID int64, name string, isFromPlayer bool) int64 {
 	msg := Message{
-		ID:     m.UnusedMessageID,
-		Text:   text,
-		ChatID: chatID,
-		Name:   name,
+		ID:           m.UnusedMessageID,
+		Text:         text,
+		ChatID:       chatID,
+		Name:         name,
+		IsFromPlayer: isFromPlayer,
 	}
 	m.Messages = append(m.Messages, msg)
 	m.UnusedMessageID++
@@ -286,7 +303,7 @@ func processServerCommand(command Command, userManager *MockUserManager) error {
 
 	serverCommand := command.Args[0]
 	switch serverCommand {
-	case "create":
+	case "create_user":
 		if command.ArgsCount != 3 {
 			return fmt.Errorf("expected 3 arguments, but met %d", command.ArgsCount)
 		}
@@ -299,13 +316,13 @@ func processServerCommand(command Command, userManager *MockUserManager) error {
 	return nil
 }
 
-func processUserCommand(command Command, userManager *MockUserManager, handlers *HandlerManager, messages *MessageManager) error {
+func processUserCommand(rt *MockRuntime, command Command) error {
 	if command.ArgsCount < 2 {
 		return fmt.Errorf("expected user command args")
 	}
 
 	name := command.Args[0]
-	user := userManager.getUser(name)
+	user := rt.UserManager.getUser(name)
 	if user == nil {
 		return fmt.Errorf("user %s does not exist", name)
 	}
@@ -315,26 +332,28 @@ func processUserCommand(command Command, userManager *MockUserManager, handlers 
 		// TODO: Handle Commands through text. When we have command in text
 		// /user John "/elevate"
 		text := command.Args[1]
-		id := messages.createMessage(text, user.ChatID, user.TelegramName)
-		err := handlers.HandleText(&MockContext{
+		id := rt.MessageManager.createMessage(text, user.ChatID, user.TelegramName, true)
+		err := rt.HandlerManager.HandleText(&MockContext{
 			chatID:      user.ChatID,
 			firstName:   user.PlayerName,
 			callback:    "",
 			args:        []string{},
 			messageID:   id,
 			messageText: text,
+			runtime:     rt,
 		})
 		return err
 	}
 
 	cb := command.Args[1]
-	err := handlers.HandleCallback(&MockContext{
+	err := rt.HandlerManager.HandleCallback(&MockContext{
 		chatID:      user.ChatID,
 		firstName:   user.PlayerName,
 		callback:    cb,
 		args:        []string{},
 		messageID:   0,
 		messageText: "",
+		runtime:     rt,
 	})
 	return err
 }

@@ -16,6 +16,7 @@ func handleListFactions(context runtime.Context, s *Session) error {
 	}
 
 	var text strings.Builder
+	text.WriteString("Factions\n\n")
 
 	for _, user := range data {
 		faction := fmt.Sprintf(`

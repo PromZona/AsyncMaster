@@ -30,7 +30,7 @@ func Init() (*App, error) {
 	isMock := flag.Bool("mock", false, "mocking runtime")
 	flag.Parse()
 
-	psqlInfo := os.Getenv("DB_CONNECTION_STRING")
+	psqlInfo := os.Getenv("GOOSE_DBSTRING")
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		log.Fatal("failed to open db connection")
@@ -63,6 +63,33 @@ func Init() (*App, error) {
 			Bot: b,
 		}
 	}
+
+	botData := bot.BotInit(db)
+	router.Register(rt, botData)
+
+	app := &App{
+		Runtime: rt,
+		BotData: botData,
+		DB:      db,
+	}
+
+	return app, nil
+}
+
+func InitTesting() (*App, error) {
+	err := godotenv.Load(".env.test")
+	if err != nil {
+		log.Fatal("error loading .env file")
+		return nil, err
+	}
+
+	psqlInfo := os.Getenv("GOOSE_DBSTRING")
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		log.Fatal("failed to open db connection")
+		return nil, err
+	}
+	rt := runtime.NewMockRuntime()
 
 	botData := bot.BotInit(db)
 	router.Register(rt, botData)
