@@ -72,12 +72,12 @@ func handleFactionDescription(context runtime.Context, s *Session) error {
 }
 
 func finilize(context runtime.Context, s *Session) error {
-	err := db.CreateUser(s.DB, s.User)
+	id, err := db.CreateUser(s.DB, s.User)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.CreateFaction(s.DB, s.User.Faction)
+	_, err = db.CreateFaction(s.DB, s.User.Faction, id)
 	if err != nil {
 		return err
 	}

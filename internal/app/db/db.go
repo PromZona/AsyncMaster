@@ -15,21 +15,18 @@ type DBExecutor interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 }
 
-func CreateUser(e DBExecutor, user *bot.UserData) error {
-	log.Print("Register User: ", user.ChatID, " ", user.TelegramName)
+func CreateUser(e DBExecutor, user *bot.UserData) ([]uint8, error) {
+	var id []uint8
 
-	result, err := e.Exec("insert into users (chat_id, telegram_name, player_name, role) values ($1, $2, $3, $4)",
+	err := e.QueryRow("insert into users (chat_id, telegram_name, player_name, role) values ($1, $2, $3, $4) RETURNING id",
 		user.ChatID,
 		user.TelegramName,
 		user.PlayerName,
-		user.Role)
+		user.Role).Scan(&id)
 	if err != nil {
-		log.Fatal("Failed to add user to database ", err)
-		return err
+		return nil, err
 	}
-	log.Print("DB: added new user ", result)
-
-	return nil
+	return id, nil
 }
 
 func UpdateUser(e DBExecutor, user *bot.UserData) {
@@ -132,7 +129,6 @@ func GetUserByID(e DBExecutor, chatID int64) (*bot.UserData, error) {
 		newUser.Faction.Name = factionName.String
 		newUser.Faction.Description = factionDescription.String
 		newUser.Faction.Resources = factionResources.String
-
 	} else {
 		newUser.Faction = nil
 	}
@@ -706,9 +702,9 @@ func DeleteRollRequest(e DBExecutor) error {
 	return nil
 }
 
-func CreateFaction(e DBExecutor, faction *bot.Faction) (*bot.Faction, error) {
-	err := e.QueryRow("INSERT INTO factions (name, description, resources) VALUES ($1, $2, $3) RETURNING id",
-		faction.Name, faction.Description, faction.Resources).
+func CreateFaction(e DBExecutor, faction *bot.Faction, userUUID []uint8) (*bot.Faction, error) {
+	err := e.QueryRow("INSERT INTO factions (name, description, resources, user_id) VALUES ($1, $2, $3, $4) RETURNING id",
+		faction.Name, faction.Description, faction.Resources, userUUID).
 		Scan(&faction.ID)
 
 	if err != nil {
