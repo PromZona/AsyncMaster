@@ -89,6 +89,10 @@ func InitTesting() (*App, error) {
 		log.Fatal("failed to open db connection")
 		return nil, err
 	}
+
+	// TODO:
+	// Delete DB tables, run all migrations
+
 	rt := runtime.NewMockRuntime()
 
 	botData := bot.BotInit(db)

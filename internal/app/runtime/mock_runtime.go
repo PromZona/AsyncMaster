@@ -196,7 +196,7 @@ func (mr *MockRuntime) Start() error {
 	return nil
 }
 
-func (m *MockUserManager) createUser(telegramName string, playerName string) {
+func (m *MockUserManager) CreateUser(telegramName string, playerName string) {
 	m.Users = append(m.Users, MockUser{
 		ChatID:       m.UnusedChatID,
 		TelegramName: telegramName,
@@ -205,7 +205,7 @@ func (m *MockUserManager) createUser(telegramName string, playerName string) {
 	m.UnusedChatID++
 }
 
-func (m *MockUserManager) getUser(name string) *MockUser {
+func (m *MockUserManager) GetUser(name string) *MockUser {
 	for _, u := range m.Users {
 		if u.PlayerName == name {
 			return &u
@@ -215,6 +215,11 @@ func (m *MockUserManager) getUser(name string) *MockUser {
 		}
 	}
 	return nil
+}
+
+func (m *MockUserManager) DeleteAllUsers() {
+	m.Users = nil // this is somehow valid golang. It just becomes slice size of 0
+	m.UnusedChatID = 0
 }
 
 func (m *MessageManager) createMessage(text string, chatID int64, name string, isFromPlayer bool) int64 {
@@ -307,8 +312,11 @@ func processServerCommand(command Command, userManager *MockUserManager) error {
 		if command.ArgsCount != 3 {
 			return fmt.Errorf("expected 3 arguments, but met %d", command.ArgsCount)
 		}
-		userManager.createUser(command.Args[1], command.Args[2])
+		userManager.CreateUser(command.Args[1], command.Args[2])
 		fmt.Printf("User created\n")
+	case "delete_all_users":
+		userManager.DeleteAllUsers()
+		fmt.Printf("All users delete\n")
 	default:
 		return fmt.Errorf("server unknown command, %s", serverCommand)
 	}
@@ -322,7 +330,7 @@ func processUserCommand(rt *MockRuntime, command Command) error {
 	}
 
 	name := command.Args[0]
-	user := rt.UserManager.getUser(name)
+	user := rt.UserManager.GetUser(name)
 	if user == nil {
 		return fmt.Errorf("user %s does not exist", name)
 	}

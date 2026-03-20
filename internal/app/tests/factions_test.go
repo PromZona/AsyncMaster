@@ -27,9 +27,7 @@ func TestMain(m *testing.M) {
 	}
 
 	// Clean DB
-	_, err := application.DB.Exec(`
-		DROP SCHEMA public CASCADE;
-		CREATE SCHEMA public;`)
+	err := DropTablesDB(application.DB)
 	if err != nil {
 		fmt.Printf("Testing: Failed at dropping db\n%s", err)
 		os.Exit(1)
@@ -38,7 +36,7 @@ func TestMain(m *testing.M) {
 	// Goose migration
 	err = goose.Up(application.DB, "./../../../migrations")
 	if err != nil {
-		fmt.Printf("Testing: failed to apply migrations.\n%s", err)
+		fmt.Printf("Testing: Failed to apply migrations.\n%s", err)
 		os.Exit(1)
 	}
 
@@ -47,9 +45,22 @@ func TestMain(m *testing.M) {
 }
 
 func TestFactionCreation(t *testing.T) {
-	rt := application.Runtime.(*runtime.MockRuntime)
 
+	//
+	// TEST: CLEANING BEFORE
+	//
+	err := TruncateAllTablesDB(application.DB)
+	if err != nil {
+		t.Fatal("Can not clean DB and start testing")
+	}
+	rt := application.Runtime.(*runtime.MockRuntime)
+	rt.UserManager.DeleteAllUsers()
+
+	//
+	// TEST: EXECUTING LOGIC
+	//
 	input := []string{
+		`/server delete_all_users`,
 		`/server create_user John Vitus`,
 		`/server create_user Victor Horrow`,
 		`/user John "pepega26"`,
@@ -68,6 +79,9 @@ func TestFactionCreation(t *testing.T) {
 		}
 	}
 
+	//
+	// TEST: EVALUATION
+	//
 	john, err := db.GetUserByID(application.DB, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -85,4 +99,8 @@ func TestFactionCreation(t *testing.T) {
 	if victor.Faction.Name != "Necro Guild" {
 		t.Fatal("Met unexpected faction name")
 	}
+}
+
+func TestFactionGet(t *testing.T) {
+
 }
