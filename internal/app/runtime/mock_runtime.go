@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	// "strings"
+	"strings"
 )
 
 type MockContext struct {
@@ -18,10 +18,11 @@ type MockContext struct {
 }
 
 type MockRuntime struct {
-	middlewares    []Middleware
-	UserManager    MockUserManager
-	HandlerManager HandlerManager
-	MessageManager MessageManager
+	middlewares      []Middleware
+	UserManager      MockUserManager
+	HandlerManager   HandlerManager
+	MessageManager   MessageManager
+	CommandToHandler map[string]Handler
 }
 
 type HandlerManager struct {
@@ -118,10 +119,11 @@ func (c *MockContext) MessageText() string {
 
 func NewMockRuntime() *MockRuntime {
 	return &MockRuntime{
-		middlewares:    make([]Middleware, 0),
-		UserManager:    MockUserManager{},
-		HandlerManager: HandlerManager{},
-		MessageManager: MessageManager{},
+		middlewares:      make([]Middleware, 0),
+		UserManager:      MockUserManager{},
+		HandlerManager:   HandlerManager{},
+		MessageManager:   MessageManager{},
+		CommandToHandler: map[string]Handler{},
 	}
 }
 
@@ -164,8 +166,8 @@ func (mr *MockRuntime) HandleCallback(h Handler) {
 	chain := mr.apply(h)
 	mr.HandlerManager.HandleCallback = chain
 }
-func (mr *MockRuntime) HandleCommand(string, Handler) {
-
+func (mr *MockRuntime) HandleCommand(name string, h Handler) {
+	mr.CommandToHandler[name] = h
 }
 
 func (mr *MockRuntime) apply(h Handler) Handler {
@@ -337,9 +339,27 @@ func processUserCommand(rt *MockRuntime, command Command) error {
 
 	isText := command.IsTextArgs[1]
 	if isText {
-		// TODO: Handle Commands through text. When we have command in text
-		// /user John "/elevate"
 		text := command.Args[1]
+
+		// Handle Commands through text. When we have command in text
+		// /user John "/elevate"
+		fields := strings.Fields(text)
+		if len(fields) > 0 {
+			if handle, ok := rt.CommandToHandler[fields[0]]; ok {
+				id := rt.MessageManager.createMessage(text, user.ChatID, user.TelegramName, true)
+				err := handle(&MockContext{
+					chatID:      user.ChatID,
+					firstName:   user.PlayerName,
+					callback:    "",
+					args:        fields,
+					messageID:   id,
+					messageText: text,
+					runtime:     rt,
+				})
+				return err
+			}
+		}
+
 		id := rt.MessageManager.createMessage(text, user.ChatID, user.TelegramName, true)
 		err := rt.HandlerManager.HandleText(&MockContext{
 			chatID:      user.ChatID,

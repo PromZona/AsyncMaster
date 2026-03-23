@@ -41,11 +41,6 @@ func GetMainMenuByRole(context runtime.Context, DB *sql.DB, user *bot.UserData) 
 func HandleElevateToMaster(context runtime.Context, b *bot.BotData) error {
 	args := context.Args()
 	chatID := context.ChatID()
-	session := b.GetSession(chatID)
-
-	if session != nil {
-		return context.Send("Please finish previous action to activate this command")
-	}
 
 	if len(args) < 1 {
 		return context.Send("Not enough arguments received. Send a password as argument for a command")
