@@ -160,19 +160,17 @@ func playerMenu(unansweredMRCount int) runtime.Keyboard {
 	if unansweredMRCount > 0 {
 		masterRequestEmoji = "🔴"
 	}
-	masterRequestText := fmt.Sprintf("%s Answer Master Request (%d unanswered) %s",
+	masterRequestText := fmt.Sprintf("%s Answer Master Request (%d unanswered)",
 		masterRequestEmoji,
-		unansweredMRCount,
-		masterRequestEmoji)
+		unansweredMRCount)
 	btnMasterRequests := runtime.Button{Text: masterRequestText, Unique: string(bot.HID_mr_player_get)}
 
-	rows := runtime.Row{
-		btnMasterRequests,
-		btnSend,
-		btnMessages,
-		btnFactions,
+	rows := []runtime.Row{
+		{btnMasterRequests},
+		{btnSend, btnMessages},
+		{btnFactions},
 	}
 
-	keyboard := runtime.Keyboard{rows}
+	keyboard := runtime.Keyboard(rows)
 	return keyboard
 }
