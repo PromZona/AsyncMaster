@@ -351,7 +351,7 @@ func processUserCommand(rt *MockRuntime, command Command) error {
 					chatID:      user.ChatID,
 					firstName:   user.PlayerName,
 					callback:    "",
-					args:        fields,
+					args:        fields[1:],
 					messageID:   id,
 					messageText: text,
 					runtime:     rt,
