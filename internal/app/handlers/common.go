@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"os"
 	"strings"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
@@ -35,6 +36,41 @@ func GetMainMenuByRole(context runtime.Context, DB *sql.DB, user *bot.UserData) 
 		return ui.MainMenuMasterKeyboard(context, user, nil)
 	}
 	return context.Send("Met unexpected role")
+}
+
+func HandleElevateToMaster(context runtime.Context, b *bot.BotData) error {
+	args := context.Args()
+	chatID := context.ChatID()
+	session := b.GetSession(chatID)
+
+	if session != nil {
+		return context.Send("Please finish previous action to activate this command")
+	}
+
+	if len(args) < 1 {
+		return context.Send("Not enough arguments received. Send a password as argument for a command")
+	}
+
+	password := os.Getenv("BOT_MASTER_PASSWORD")
+	if password != args[0] {
+		return context.Send("Password is incorrect")
+	}
+
+	user, err := db.GetUserByID(b.DB, chatID)
+	if err != nil {
+		return err
+	}
+
+	user.Role = bot.RoleMaster
+	db.UpdateUser(b.DB, user)
+
+	user, err = db.GetUserByID(b.DB, chatID)
+	if err != nil {
+		return err
+	}
+
+	context.Send("Role updated to Master")
+	return GetMainMenuByRole(context, b.DB, user)
 }
 
 func ParseCallbackDataString(callbackData string) (unique, data string) {

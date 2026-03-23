@@ -8,7 +8,6 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	"github.com/PromZona/AsyncMaster/internal/app/flows/common"
 	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	"github.com/PromZona/AsyncMaster/internal/app/ui"
 )
@@ -38,6 +37,11 @@ func InitialSendMessage(context runtime.Context, s *bot.Session) error {
 		return err
 	}
 	return context.Send("Names:", ui.PlayerNamesKeyboard(playerNames, chatIDs))
+}
+
+func InitialSendEveryone(context runtime.Context, s *bot.Session) error {
+	s.IsSendEveryone = true
+	return InitialSendMessage(context, s)
 }
 
 func PlayerNameProcess(context runtime.Context, s *bot.Session) error {
@@ -72,7 +76,7 @@ func MessageTextProcess(context runtime.Context, s *bot.Session) error {
 
 func MessageTitleProcess(context runtime.Context, s *bot.Session) error {
 	s.DraftMessage.Title = context.MessageText()
-	return finilize(context, s)
+	return messageCreationFinilize(context, s)
 }
 
 func MessageYesTitle(context runtime.Context, s *bot.Session) error {
@@ -80,10 +84,10 @@ func MessageYesTitle(context runtime.Context, s *bot.Session) error {
 }
 
 func MessageNoTitle(context runtime.Context, s *bot.Session) error {
-	return finilize(context, s)
+	return messageCreationFinilize(context, s)
 }
 
-func finilize(context runtime.Context, s *bot.Session) error {
+func messageCreationFinilize(context runtime.Context, s *bot.Session) error {
 	chatID := context.ChatID()
 
 	transaction := s.DraftTransaction
@@ -138,5 +142,40 @@ func finilize(context runtime.Context, s *bot.Session) error {
 	if err != nil {
 		return err
 	}
-	return common.GetMainMenuByRole(context, s.DB, user)
+	return GetMainMenuByRole(context, s.DB, user)
+}
+
+func ListMessages(context runtime.Context, s *bot.Session) error {
+	messages, err := db.GetLastMessageTransactions(s.DB, context.ChatID())
+	if err != nil {
+		return err
+	}
+
+	return context.Send("Your last 10 messages, pick one", ui.UserMessagesKeyboard(messages))
+}
+
+func GetMessage(context runtime.Context, s *bot.Session) error {
+	_, cbData := ParseCallbackDataString(context.Callback())
+	transactionID, err := strconv.ParseInt(cbData, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	transaction, err := db.GetMessageTransaction(s.DB, transactionID)
+	if err != nil {
+		return err
+	}
+
+	user_from, err := db.GetUserByID(s.DB, int64(transaction.From))
+	if err != nil {
+		return err
+	}
+	messageFromPlayerName := user_from.PlayerName
+
+	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\n\n %s",
+		transaction.Message.Title,
+		messageFromPlayerName,
+		transaction.Message.Text)
+
+	return context.Send(formatedMessage)
 }

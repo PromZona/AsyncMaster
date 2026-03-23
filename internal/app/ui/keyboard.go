@@ -6,13 +6,6 @@ import (
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/runtime"
-
-	answrmstrc "github.com/PromZona/AsyncMaster/internal/app/flows/answer_master/contract"
-	listfctns "github.com/PromZona/AsyncMaster/internal/app/flows/list_factions/contract"
-	listmstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/list_master_requests/contract"
-	listmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/list_messages/contract"
-	mstrreqc "github.com/PromZona/AsyncMaster/internal/app/flows/master_request/contract"
-	sendmsgc "github.com/PromZona/AsyncMaster/internal/app/flows/send_message/contract"
 )
 
 func MainMenuPlayerKeyboard(context runtime.Context, user *bot.UserData, menuData *PlayerMenu) error {
@@ -52,7 +45,7 @@ func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) runtime.Keyboard
 		dataString := fmt.Sprintf("%s:%d", name, chatIDs[i])
 		btnPlayerNames = append(
 			btnPlayerNames,
-			runtime.Button{Text: name, Unique: sendmsgc.CBPlayerNames, Data: dataString})
+			runtime.Button{Text: name, Unique: string(bot.HID_message_player_name), Data: dataString})
 	}
 
 	rows := []runtime.Row{}
@@ -83,13 +76,13 @@ func YesNoKeyboard() runtime.Keyboard {
 func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) runtime.Keyboard {
 	allRows := make([]runtime.Row, 0, len(masterRequest.RollRequests)+1)
 
-	btnReply := runtime.Button{Text: "Reply to Master", Unique: answrmstrc.CBReplyToMaster, Data: fmt.Sprintf("%d", masterRequest.ID)}
+	btnReply := runtime.Button{Text: "Reply to Master", Unique: string(bot.HID_mr_answer_text), Data: fmt.Sprintf("%d", masterRequest.ID)}
 	allRows = append(allRows, runtime.Row{btnReply})
 
 	for _, roll := range masterRequest.RollRequests {
 		text := fmt.Sprintf("%dd%d: %s", roll.DiceCount, roll.DiceSides, roll.Title)
 		data := fmt.Sprintf("%d", roll.ID)
-		btnRoll := runtime.Button{Text: text, Unique: answrmstrc.CBRollRequest, Data: data}
+		btnRoll := runtime.Button{Text: text, Unique: string(bot.HID_mr_answer_roll), Data: data}
 		allRows = append(allRows, runtime.Row{btnRoll})
 	}
 
@@ -102,7 +95,7 @@ func UserMessagesKeyboard(transactions []*bot.MessageTransaction) runtime.Keyboa
 	for _, t := range transactions {
 		text := fmt.Sprintf("%s", t.Message.Title)
 		data := fmt.Sprintf("%d", t.ID)
-		btnMessage := runtime.Button{Text: text, Unique: listmsgc.CBGetMessage, Data: data}
+		btnMessage := runtime.Button{Text: text, Unique: string(bot.HID_message_get), Data: data}
 		allRows = append(allRows, runtime.Row{btnMessage})
 	}
 
@@ -113,7 +106,7 @@ func UserMessagesKeyboard(transactions []*bot.MessageTransaction) runtime.Keyboa
 
 func MasterRequestMarkRead(requestID int64) runtime.Keyboard {
 	data := fmt.Sprintf("%d", requestID)
-	btnMarkRead := runtime.Button{Text: "Mark as Read", Unique: listmstrreqc.CBMarkAsRead, Data: data}
+	btnMarkRead := runtime.Button{Text: "Mark as Read", Unique: string(bot.HID_mr_master_mark_read), Data: data}
 
 	keyboard := runtime.Keyboard{runtime.Row{btnMarkRead}}
 	return keyboard
@@ -131,23 +124,23 @@ func masterMenu() runtime.Keyboard {
 
 	btnSendMasters := runtime.Button{
 		Text:   "Send Message",
-		Unique: sendmsgc.CBSend,
+		Unique: string(bot.HID_message_send),
 	}
 	btnSendEveryone := runtime.Button{
 		Text:   "Send Message to Everyone",
-		Unique: sendmsgc.CBSendEveryone,
+		Unique: string(bot.HID_message_send_everyone),
 	}
 	btnMasterRequest := runtime.Button{
 		Text:   "Master Request",
-		Unique: mstrreqc.CBStartMasterRequest,
+		Unique: string(bot.HID_mr_send),
 	}
 	btnMasterRequestEveryone := runtime.Button{
 		Text:   "Master Request to Everyone",
-		Unique: mstrreqc.CBStartMasterRequestEveryone,
+		Unique: string(bot.HID_mr_send_everyone),
 	}
 	btnCheckAnsweredMasterRequest := runtime.Button{
 		Text:   "Answered Request",
-		Unique: listmstrreqc.CBGetAnsweredMasterRequest,
+		Unique: string(bot.HID_mr_master_get),
 	}
 
 	keyboard := runtime.Keyboard{
@@ -159,9 +152,9 @@ func masterMenu() runtime.Keyboard {
 }
 
 func playerMenu(unansweredMRCount int) runtime.Keyboard {
-	btnSend := runtime.Button{Text: "Send Message", Unique: sendmsgc.CBSend}
-	btnMessages := runtime.Button{Text: "My Messages", Unique: listmsgc.CBGetMessageList}
-	btnFactions := runtime.Button{Text: "Factions", Unique: listfctns.CBListFactions}
+	btnSend := runtime.Button{Text: "Send Message", Unique: string(bot.HID_message_send)}
+	btnMessages := runtime.Button{Text: "My Messages", Unique: string(bot.HID_message_list)}
+	btnFactions := runtime.Button{Text: "Factions", Unique: string(bot.HID_list_factions)}
 
 	masterRequestEmoji := "🟢"
 	if unansweredMRCount > 0 {
@@ -171,7 +164,7 @@ func playerMenu(unansweredMRCount int) runtime.Keyboard {
 		masterRequestEmoji,
 		unansweredMRCount,
 		masterRequestEmoji)
-	btnMasterRequests := runtime.Button{Text: masterRequestText, Unique: listmstrreqc.CBGetMasterRequests}
+	btnMasterRequests := runtime.Button{Text: masterRequestText, Unique: string(bot.HID_mr_player_get)}
 
 	rows := runtime.Row{
 		btnMasterRequests,

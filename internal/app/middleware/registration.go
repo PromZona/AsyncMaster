@@ -1,9 +1,11 @@
 package middleware
 
 import (
+	"fmt"
+
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
-	"github.com/PromZona/AsyncMaster/internal/app/flows/registration"
+	"github.com/PromZona/AsyncMaster/internal/app/handlers"
 	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 )
 
@@ -13,21 +15,42 @@ func RegistrationCheck(b *bot.BotData) runtime.Middleware {
 			chatID := context.ChatID()
 
 			if !db.EnsureUserExist(b.DB, context.ChatID()) {
-				session := b.GetUserSession(chatID)
+				session := b.GetSession(chatID)
 				if session == nil {
-					session = &registration.Session{
-						DB:        b.DB,
-						UserState: registration.AwaitPassword,
-						Done:      false,
-					}
-
-					b.UserActiveSessions[chatID] = session
+					session = bot.NewSession(b.DB)
+					session.RegistrationState = bot.RegistrationAwaitPassword
+					b.Sessions[chatID] = session
 				}
-				err := session.DispatchText(context)
-				if !session.IsDone() {
+
+				var err error
+				switch session.RegistrationState {
+				case bot.RegistrationAwaitPassword:
+					err = handlers.RegistrationPassword(context, session)
+				case bot.RegistrationAwaitCodename:
+					err = handlers.RegistrationPlayerName(context, session)
+				case bot.RegistrationAwaitFactionName:
+					err = handlers.RegistrationFactionName(context, session)
+				case bot.RegistrationAwaitFactionDescription:
+					err = handlers.RegistrationFactionDescription(context, session)
+				case bot.RegistrationNotActive:
+					fallthrough
+				case bot.RegistrationFinished:
+					fallthrough
+				default:
+					return fmt.Errorf("Met unexpected state while registering user: %d", session.RegistrationState)
+				}
+
+				if session.RegistrationState != bot.RegistrationFinished {
 					return err
 				}
-				delete(b.UserActiveSessions, chatID)
+
+			} else {
+				session := b.GetSession(chatID)
+				if session == nil {
+					session = bot.NewSession(b.DB)
+					b.Sessions[chatID] = session
+				}
+				session.RegistrationState = bot.RegistrationFinished
 			}
 			return next(context)
 		}

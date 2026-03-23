@@ -54,6 +54,9 @@ func TestFactionCreation(t *testing.T) {
 	}
 	rt := application.Runtime.(*runtime.MockRuntime)
 	rt.UserManager.DeleteAllUsers()
+	for k := range application.BotData.Sessions {
+		delete(application.BotData.Sessions, k)
+	}
 
 	//
 	// TEST: EXECUTING LOGIC
@@ -110,6 +113,9 @@ func TestFactionGet(t *testing.T) {
 	}
 	rt := application.Runtime.(*runtime.MockRuntime)
 	rt.UserManager.DeleteAllUsers()
+	for k := range application.BotData.Sessions {
+		delete(application.BotData.Sessions, k)
+	}
 
 	//
 	// TEST: EXECUTING LOGIC

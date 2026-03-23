@@ -12,25 +12,68 @@ import (
 type BotData struct {
 	DB *sql.DB
 
-	UserActiveSessions    map[int64]FlowSession
-	UserRegistrationCache map[int64]*UserData
+	Sessions map[int64]*Session
 }
 
 func BotInit(db *sql.DB) *BotData {
 	bot := &BotData{
-		DB:                    db,
-		UserActiveSessions:    make(map[int64]FlowSession),
-		UserRegistrationCache: make(map[int64]*UserData),
+		DB:       db,
+		Sessions: make(map[int64]*Session),
 	}
 	return bot
 }
 
-type FlowSession interface {
-	Name() string
-	IsSupportedCallback(string) bool
-	IsDone() bool
-	DispatchCallback(context runtime.Context, cbUnique string, cbData string) error
-	DispatchText(context runtime.Context) error
+type RegistrationState int
+
+const (
+	RegistrationNotActive               RegistrationState = 0
+	RegistrationAwaitPassword           RegistrationState = 1
+	RegistrationAwaitCodename           RegistrationState = 2
+	RegistrationAwaitFactionName        RegistrationState = 3
+	RegistrationAwaitFactionDescription RegistrationState = 4
+	RegistrationFinished                RegistrationState = 5
+)
+
+type Session struct {
+	DB            *sql.DB
+	PreviousRoute *Route
+
+	// Registration
+	RegistrationState RegistrationState
+	RegistrationUser  *UserData
+
+	// Message Handler
+	DraftMessage     *Message
+	DraftTransaction *MessageTransaction
+	IsSendEveryone   bool
+
+	// Master Request
+	MasterRequest *MasterRequest
+	RollRequests  []*RollRequest
+	Resipients    []int64
+}
+
+func NewSession(db *sql.DB) *Session {
+	return &Session{
+		DB:                db,
+		PreviousRoute:     nil,
+		RegistrationState: RegistrationNotActive,
+		RegistrationUser:  nil,
+		DraftMessage:      nil,
+		DraftTransaction:  nil,
+		IsSendEveryone:    false,
+		MasterRequest:     nil,
+		RollRequests:      nil,
+		Resipients:        nil,
+	}
+}
+
+func (b *BotData) GetSession(chatID int64) *Session {
+	s, ok := b.Sessions[chatID]
+	if !ok {
+		return nil
+	}
+	return s
 }
 
 type UserData struct {
@@ -46,16 +89,7 @@ func (user *UserData) Recipient() string {
 }
 
 func (b *BotData) ClearUserCache(chatID int64) {
-	delete(b.UserActiveSessions, chatID)
-	delete(b.UserRegistrationCache, chatID)
-}
-
-func (b *BotData) GetUserSession(chatID int64) FlowSession {
-	session, ok := b.UserActiveSessions[chatID]
-	if !ok {
-		return nil
-	}
-	return session
+	delete(b.Sessions, chatID)
 }
 
 type Message struct {
@@ -118,3 +152,50 @@ type Faction struct {
 	Description string
 	Resources   string
 }
+
+type Handler func(runtime.Context, *Session) error
+type HandlerID string
+
+type Route struct {
+	Callback HandlerID
+	Handler  Handler
+
+	NextPossibleCallbacks []HandlerID
+}
+
+const (
+	HID_cancel        HandlerID = "cancel"
+	HID_list_factions HandlerID = "list_factions"
+
+	// Message Create
+	HID_message_send          HandlerID = "message_send"
+	HID_message_send_everyone HandlerID = "message_send_everyone"
+	HID_message_player_name   HandlerID = "message_player_name"
+	HID_message_text          HandlerID = "message_text"
+	HID_message_title_yes     HandlerID = "message_title_yes"
+	HID_message_title_no      HandlerID = "message_title_no"
+	HID_message_title_text    HandlerID = "message_title_text"
+
+	// Message Get
+	HID_message_list HandlerID = "message_list"
+	HID_message_get  HandlerID = "message_get"
+
+	// Master Request Create
+	HID_mr_send          HandlerID = "master_request_send"
+	HID_mr_send_everyone HandlerID = "master_request_send_everyone"
+	HID_mr_resipient     HandlerID = "master_request_resipient"
+	HID_mr_text          HandlerID = "master_request_text"
+	HID_mr_dice_yes      HandlerID = "master_request_dice_yes"
+	HID_mr_dice_no       HandlerID = "master_request_dice_no"
+	HID_mr_dice_text     HandlerID = "master_request_dice_text"
+
+	// Master Request Answer
+	HID_mr_answer      HandlerID = "master_request_answer"
+	HID_mr_answer_text HandlerID = "master_request_answer_text"
+	HID_mr_answer_roll HandlerID = "master_request_answer_roll"
+
+	// Master Request Get
+	HID_mr_player_get       HandlerID = "master_request_player_get"
+	HID_mr_master_get       HandlerID = "master_request_master_get"
+	HID_mr_master_mark_read HandlerID = "master_request_master_mark_read"
+)
