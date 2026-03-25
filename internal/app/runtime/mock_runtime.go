@@ -46,6 +46,7 @@ type MessageManager struct {
 type Message struct {
 	ID           int64
 	Text         string
+	Keyboard     Keyboard
 	ChatID       int64
 	Name         string
 	IsFromPlayer bool
@@ -85,20 +86,43 @@ func (c *MockContext) Callback() string {
 }
 
 func (c *MockContext) Send(text string, k ...Keyboard) error {
-	fmt.Printf("[BotReply]: %s\n", text)
-	for _, keyboard := range k {
-		for _, row := range keyboard {
-			for _, btn := range row {
-				fmt.Printf("%s [%s | %s]\n", btn.Text, btn.Unique, btn.Data)
-			}
-		}
+	if len(k) > 1 {
+		panic("Too many keyboards met, should be only 1")
 	}
 
-	c.runtime.MessageManager.createMessage(text, c.chatID, c.firstName, false)
+	fmt.Printf("[BotReply]: %s\n", text)
+
+	var keyboard Keyboard
+	for _, kb := range k {
+		for _, row := range kb {
+			for _, btn := range row {
+				fmt.Printf("\t[%s | %s]\t %s\n", btn.Unique, btn.Data, btn.Text)
+			}
+		}
+		keyboard = kb
+	}
+
+	c.runtime.MessageManager.createMessage(text, c.chatID, c.firstName, false, keyboard)
 	return nil
 }
 func (c *MockContext) SendTo(id int64, text string, k ...Keyboard) error {
-	fmt.Print("SendTo received")
+	if len(k) > 1 {
+		panic("Too many keyboards met, should be only 1")
+	}
+
+	fmt.Printf("[BotReply]: %s\n", text)
+
+	var keyboard Keyboard
+	for _, kb := range k {
+		for _, row := range keyboard {
+			for _, btn := range row {
+				fmt.Printf("\t[%s | %s]\t %s\n", btn.Unique, btn.Data, btn.Text)
+			}
+		}
+		keyboard = kb
+	}
+
+	c.runtime.MessageManager.createMessage(text, c.chatID, c.firstName, false, keyboard)
 	return nil
 }
 
@@ -224,10 +248,11 @@ func (m *MockUserManager) DeleteAllUsers() {
 	m.UnusedChatID = 0
 }
 
-func (m *MessageManager) createMessage(text string, chatID int64, name string, isFromPlayer bool) int64 {
+func (m *MessageManager) createMessage(text string, chatID int64, name string, isFromPlayer bool, keyboard Keyboard) int64 {
 	msg := Message{
 		ID:           m.UnusedMessageID,
 		Text:         text,
+		Keyboard:     keyboard,
 		ChatID:       chatID,
 		Name:         name,
 		IsFromPlayer: isFromPlayer,
@@ -338,6 +363,7 @@ func processUserCommand(rt *MockRuntime, command Command) error {
 	}
 
 	isText := command.IsTextArgs[1]
+	fmt.Printf("[Player Send] [%s] %s\n", name, command.Args[1])
 	if isText {
 		text := command.Args[1]
 
@@ -346,7 +372,7 @@ func processUserCommand(rt *MockRuntime, command Command) error {
 		fields := strings.Fields(text)
 		if len(fields) > 0 {
 			if handle, ok := rt.CommandToHandler[fields[0]]; ok {
-				id := rt.MessageManager.createMessage(text, user.ChatID, user.TelegramName, true)
+				id := rt.MessageManager.createMessage(text, user.ChatID, user.TelegramName, true, nil)
 				err := handle(&MockContext{
 					chatID:      user.ChatID,
 					firstName:   user.PlayerName,
@@ -360,7 +386,7 @@ func processUserCommand(rt *MockRuntime, command Command) error {
 			}
 		}
 
-		id := rt.MessageManager.createMessage(text, user.ChatID, user.TelegramName, true)
+		id := rt.MessageManager.createMessage(text, user.ChatID, user.TelegramName, true, nil)
 		err := rt.HandlerManager.HandleText(&MockContext{
 			chatID:      user.ChatID,
 			firstName:   user.PlayerName,

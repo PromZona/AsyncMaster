@@ -292,7 +292,7 @@ func GetLastMessageTransactions(e DBExecutor, toPlayerChatID int64) ([]*bot.Mess
 			m.message_text
 		FROM message_transaction mt
 		JOIN messages m ON m.id = mt.message_id
-		WHERE mt.to_chat = $1
+		WHERE $1 = ANY(mt.to_chat)
 		ORDER BY mt.created_at DESC
 		LIMIT 10
 	`, toPlayerChatID)
@@ -311,7 +311,7 @@ func GetLastMessageTransactions(e DBExecutor, toPlayerChatID int64) ([]*bot.Mess
 			&mt.ID,
 			&mt.CreatedAt,
 			&mt.From,
-			&mt.To,
+			pq.Array(&mt.To),
 
 			&msg.ID,
 			&msg.Title,
@@ -349,7 +349,7 @@ func GetMessageTransaction(e DBExecutor, transactionID int64) (*bot.MessageTrans
 			m.message_text
 		FROM message_transaction mt
 		JOIN messages m ON m.id = mt.message_id
-		WHERE mt.id = $1
+		WHERE $1 = mt.id
 		ORDER BY mt.created_at DESC
 		LIMIT 10
 	`, transactionID)
@@ -368,7 +368,7 @@ func GetMessageTransaction(e DBExecutor, transactionID int64) (*bot.MessageTrans
 			&mt.ID,
 			&mt.CreatedAt,
 			&mt.From,
-			&mt.To,
+			pq.Array(&mt.To),
 
 			&msg.ID,
 			&msg.Title,

@@ -59,6 +59,7 @@ func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) runtime.Keyboard
 }
 
 func YesNoKeyboard() runtime.Keyboard {
+	// panic("NEED TO MAKE IT UNIQUE PER HID")
 	btnNo := runtime.Button{Text: "No", Unique: "no"}
 	btnYes := runtime.Button{Text: "Yes", Unique: "yes"}
 

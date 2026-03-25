@@ -15,6 +15,9 @@ func RegistrationCheck(b *bot.BotData) runtime.Middleware {
 			chatID := context.ChatID()
 
 			if !db.EnsureUserExist(b.DB, context.ChatID()) {
+				if context.Callback() != "" {
+					return nil
+				}
 				session := b.GetSession(chatID)
 				if session == nil {
 					session = bot.NewSession(b.DB)
@@ -37,7 +40,7 @@ func RegistrationCheck(b *bot.BotData) runtime.Middleware {
 				case bot.RegistrationFinished:
 					fallthrough
 				default:
-					return fmt.Errorf("Met unexpected state while registering user: %d", session.RegistrationState)
+					return fmt.Errorf("met unexpected state while registering user: %d", session.RegistrationState)
 				}
 
 				if session.RegistrationState != bot.RegistrationFinished {

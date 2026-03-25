@@ -1,62 +1,19 @@
 package test
 
 import (
-	"fmt"
-	"os"
 	"strings"
 	"testing"
 
-	"github.com/PromZona/AsyncMaster/internal/app"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
 	"github.com/PromZona/AsyncMaster/internal/app/runtime"
-
-	goose "github.com/pressly/goose/v3"
 )
-
-var (
-	application *app.App
-	err         error
-)
-
-func TestMain(m *testing.M) {
-	application, err = app.InitTesting()
-	if err != nil {
-		fmt.Printf("Testing: Failed initialize application\n%s", err)
-		os.Exit(1)
-	}
-
-	// Clean DB
-	err := DropTablesDB(application.DB)
-	if err != nil {
-		fmt.Printf("Testing: Failed at dropping db\n%s", err)
-		os.Exit(1)
-	}
-
-	// Goose migration
-	err = goose.Up(application.DB, "./../../../migrations")
-	if err != nil {
-		fmt.Printf("Testing: Failed to apply migrations.\n%s", err)
-		os.Exit(1)
-	}
-
-	exitCode := m.Run()
-	os.Exit(exitCode)
-}
 
 func TestFactionCreation(t *testing.T) {
 
 	//
-	// TEST: CLEANING BEFORE
+	// TEST: CLEANING
 	//
-	err := TruncateAllTablesDB(application.DB)
-	if err != nil {
-		t.Fatal("Can not clean DB and start testing")
-	}
-	rt := application.Runtime.(*runtime.MockRuntime)
-	rt.UserManager.DeleteAllUsers()
-	for k := range application.BotData.Sessions {
-		delete(application.BotData.Sessions, k)
-	}
+	resetState()
 
 	//
 	// TEST: EXECUTING LOGIC
@@ -107,15 +64,7 @@ func TestFactionGet(t *testing.T) {
 	//
 	// TEST: CLEANING BEFORE
 	//
-	err := TruncateAllTablesDB(application.DB)
-	if err != nil {
-		t.Fatal("Can not clean DB and start testing")
-	}
-	rt := application.Runtime.(*runtime.MockRuntime)
-	rt.UserManager.DeleteAllUsers()
-	for k := range application.BotData.Sessions {
-		delete(application.BotData.Sessions, k)
-	}
+	resetState()
 
 	//
 	// TEST: EXECUTING LOGIC

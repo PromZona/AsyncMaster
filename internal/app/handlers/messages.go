@@ -15,6 +15,11 @@ import (
 func InitialSendMessage(context runtime.Context, s *bot.Session) error {
 	chatID := context.ChatID()
 
+	s.DraftTransaction = &bot.MessageTransaction{
+		From:    chatID,
+		To:      nil,
+		Message: nil,
+	}
 	s.DraftTransaction.From = chatID
 
 	if s.IsSendEveryone {
@@ -24,9 +29,7 @@ func InitialSendMessage(context runtime.Context, s *bot.Session) error {
 		}
 
 		chatids := make([]int64, len(ids))
-		for i, v := range ids {
-			chatids[i] = v
-		}
+		copy(chatids, ids)
 		s.DraftTransaction.To = chatids
 		return context.Send("Write your message:")
 	}
