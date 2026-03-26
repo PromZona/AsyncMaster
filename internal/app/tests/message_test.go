@@ -192,7 +192,7 @@ func TestMessage_FlowValidation(t *testing.T) {
 	// TEST CASE 4: Random command mid-flow
 	//
 	_, _ = runtime.ExecuteCommand(rt, `/user John message_send`)
-	_, _ = runtime.ExecuteCommand(rt, `/user John list_factions`) // interrupt flow
+	_, _ = runtime.ExecuteCommand(rt, `/user John factions_list`) // interrupt flow
 
 	//
 	// TEST CASE 5: Ensure flow still works after failures

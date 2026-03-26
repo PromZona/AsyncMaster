@@ -94,7 +94,7 @@ func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) runtime.Keyboard {
 func UserMessagesKeyboard(transactions []*bot.MessageTransaction) runtime.Keyboard {
 	allRows := make([]runtime.Row, 0, len(transactions)+1)
 	for _, t := range transactions {
-		text := fmt.Sprintf("%s", t.Message.Title)
+		text := t.Message.Title
 		data := fmt.Sprintf("%d", t.ID)
 		btnMessage := runtime.Button{Text: text, Unique: string(bot.HID_message_get), Data: data}
 		allRows = append(allRows, runtime.Row{btnMessage})
@@ -111,6 +111,38 @@ func MasterRequestMarkRead(requestID int64) runtime.Keyboard {
 
 	keyboard := runtime.Keyboard{runtime.Row{btnMarkRead}}
 	return keyboard
+}
+
+func FactionsUpdateFactionsList(users []bot.UserData) runtime.Keyboard {
+	allRows := make([]runtime.Row, 0, len(users)+1)
+
+	for _, u := range users {
+		text := fmt.Sprintf("%s (%s)", u.Faction.Name, u.PlayerName)
+		data := fmt.Sprintf("%d", u.ChatID)
+		btn := runtime.Button{Text: text, Unique: string(bot.HID_factions_update_player), Data: data}
+		allRows = append(allRows, runtime.Row{btn})
+	}
+
+	allRows = append(allRows, runtime.Row{cancelButton()})
+	keyboard := runtime.Keyboard(allRows)
+	return keyboard
+}
+
+func FactionsUpdateWhatToUpdate() runtime.Keyboard {
+
+	btnResources := runtime.Button{Text: "Resources", Unique: string(bot.HID_factions_update_resources), Data: ""}
+
+	keyboard := runtime.Keyboard{
+		{btnResources},
+		{cancelButton()},
+	}
+	return keyboard
+}
+
+func CancelMenu() runtime.Keyboard {
+	return runtime.Keyboard{
+		{cancelButton()},
+	}
 }
 
 func cancelButton() runtime.Button {
@@ -143,10 +175,15 @@ func masterMenu() runtime.Keyboard {
 		Text:   "Answered Request",
 		Unique: string(bot.HID_mr_master_get),
 	}
+	btnFactions := runtime.Button{
+		Text:   "Factions",
+		Unique: string(bot.HID_factions_update),
+	}
 
 	keyboard := runtime.Keyboard{
 		{btnSendMasters, btnSendEveryone},
 		{btnMasterRequest, btnMasterRequestEveryone},
+		{btnFactions},
 		{btnCheckAnsweredMasterRequest},
 	}
 	return keyboard
@@ -155,7 +192,7 @@ func masterMenu() runtime.Keyboard {
 func playerMenu(unansweredMRCount int) runtime.Keyboard {
 	btnSend := runtime.Button{Text: "Send Message", Unique: string(bot.HID_message_send)}
 	btnMessages := runtime.Button{Text: "My Messages", Unique: string(bot.HID_message_list)}
-	btnFactions := runtime.Button{Text: "Factions", Unique: string(bot.HID_list_factions)}
+	btnFactions := runtime.Button{Text: "Factions", Unique: string(bot.HID_factions_list)}
 
 	masterRequestEmoji := "🟢"
 	if unansweredMRCount > 0 {

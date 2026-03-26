@@ -49,7 +49,7 @@ func TestRegistration_UnexpectedCommand(t *testing.T) {
 		`/server create_user John Vitus`,
 
 		`/user John "pepega26"`,
-		`/user John list_factions`, // unexpected in middle
+		`/user John factions_list`, // unexpected in middle
 		`/user John "Vitus"`,
 		`/user John "Wolves"`,
 		`/user John "Strong wolves"`,

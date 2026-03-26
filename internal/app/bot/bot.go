@@ -38,6 +38,9 @@ type Session struct {
 	DB            *sql.DB
 	PreviousRoute *Route
 
+	// factions
+	FactionUpdateUser *UserData
+
 	// Registration
 	RegistrationState RegistrationState
 	RegistrationUser  *UserData
@@ -164,8 +167,14 @@ type Route struct {
 }
 
 const (
-	HID_cancel        HandlerID = "cancel"
-	HID_list_factions HandlerID = "list_factions"
+	HID_cancel HandlerID = "cancel"
+
+	// Factions
+	HID_factions_list                  HandlerID = "factions_list"
+	HID_factions_update                HandlerID = "factions_update"
+	HID_factions_update_player         HandlerID = "factions_update_player"
+	HID_factions_update_resources      HandlerID = "factions_update_resources"
+	HID_factions_update_resources_text HandlerID = "factions_update_resources_text"
 
 	// Message Create
 	HID_message_send          HandlerID = "message_send"

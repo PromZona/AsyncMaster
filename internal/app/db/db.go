@@ -29,15 +29,13 @@ func CreateUser(e DBExecutor, user *bot.UserData) ([]uint8, error) {
 	return id, nil
 }
 
-func UpdateUser(e DBExecutor, user *bot.UserData) {
+func UpdateUser(e DBExecutor, user *bot.UserData) error {
 	_, err := e.Exec("UPDATE users SET telegram_name = $1, player_name = $2, role = $3 WHERE chat_id = $4",
 		user.TelegramName,
 		user.PlayerName,
 		user.Role,
 		user.ChatID)
-	if err != nil {
-		log.Print("ERROR: while updating user ", user.ChatID, ". ", err)
-	}
+	return err
 }
 
 func GetUsersAll(e DBExecutor) ([]bot.UserData, error) {
@@ -732,9 +730,12 @@ func GetFaction(e DBExecutor) {
 
 }
 
-func UpdateFaction(e DBExecutor) {
-
+func UpdateFaction(e DBExecutor, factionID int64, f *bot.Faction) error {
+	_, err := e.Exec("UPDATE factions SET name = $1, description = $2, resources = $3 WHERE id = $4",
+		f.Name, f.Description, f.Resources, factionID)
+	return err
 }
+
 func DeleteFaction(e DBExecutor) {
 
 }

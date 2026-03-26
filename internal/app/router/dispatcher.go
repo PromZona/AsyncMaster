@@ -11,8 +11,28 @@ import (
 
 var Routes = []*bot.Route{
 	{
-		Callback:              bot.HID_list_factions,
+		Callback:              bot.HID_factions_list,
 		Handler:               handlers.ListFactions,
+		NextPossibleCallbacks: []bot.HandlerID{},
+	},
+	{
+		Callback:              bot.HID_factions_update,
+		Handler:               handlers.FactionsUpdate,
+		NextPossibleCallbacks: []bot.HandlerID{bot.HID_factions_update_player},
+	},
+	{
+		Callback:              bot.HID_factions_update_player,
+		Handler:               handlers.FactionUpdatePickWhat,
+		NextPossibleCallbacks: []bot.HandlerID{bot.HID_factions_update_resources}, // can add more options to update here
+	},
+	{
+		Callback:              bot.HID_factions_update_resources,
+		Handler:               handlers.FactionUpdateResources,
+		NextPossibleCallbacks: []bot.HandlerID{bot.HID_factions_update_resources_text},
+	},
+	{
+		Callback:              bot.HID_factions_update_resources_text,
+		Handler:               handlers.FactionUpdateResourcesText,
 		NextPossibleCallbacks: []bot.HandlerID{},
 	},
 
