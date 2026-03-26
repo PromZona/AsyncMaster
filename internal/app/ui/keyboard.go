@@ -175,15 +175,19 @@ func masterMenu() runtime.Keyboard {
 		Text:   "Answered Request",
 		Unique: string(bot.HID_mr_master_get),
 	}
-	btnFactions := runtime.Button{
-		Text:   "Factions",
+	btnFactionsUpdate := runtime.Button{
+		Text:   "Factions Update",
 		Unique: string(bot.HID_factions_update),
+	}
+	btnFactionsList := runtime.Button{
+		Text:   "Factions List",
+		Unique: string(bot.HID_factions_list),
 	}
 
 	keyboard := runtime.Keyboard{
 		{btnSendMasters, btnSendEveryone},
 		{btnMasterRequest, btnMasterRequestEveryone},
-		{btnFactions},
+		{btnFactionsList, btnFactionsUpdate},
 		{btnCheckAnsweredMasterRequest},
 	}
 	return keyboard
