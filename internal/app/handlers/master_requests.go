@@ -59,7 +59,7 @@ func MasterRequestText(context runtime.Context, s *bot.Session) error {
 		RollRequests: nil,
 	}
 	s.MasterRequest.TextRequest = context.MessageText()
-	return context.Send("Do you want to add dice request?", ui.YesNoKeyboard())
+	return context.Send("Do you want to add dice request?", ui.YesNoKeyboard(bot.HID_mr_dice_yes, bot.HID_mr_dice_no))
 }
 
 func MasterRequestDiceYes(context runtime.Context, s *bot.Session) error {
@@ -89,7 +89,7 @@ func MasterRequestAddRoll(context runtime.Context, s *bot.Session) error {
 		DiceCount: diceCount,
 		DiceSides: diceSides,
 	})
-	return context.Send("Do you want to add dice request?", ui.YesNoKeyboard())
+	return context.Send("Do you want to add dice request?", ui.YesNoKeyboard(bot.HID_mr_dice_yes, bot.HID_mr_dice_no))
 }
 
 func masterRequestCreationFinilize(context runtime.Context, s *bot.Session) error {

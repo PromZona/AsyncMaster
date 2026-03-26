@@ -74,7 +74,7 @@ func MessageTextProcess(context runtime.Context, s *bot.Session) error {
 	}
 
 	s.DraftMessage = message
-	return context.Send("Do you want to add title for a message?", ui.YesNoKeyboard())
+	return context.Send("Do you want to add title for a message?", ui.YesNoKeyboard(bot.HID_message_title_yes, bot.HID_message_title_no))
 }
 
 func MessageTitleProcess(context runtime.Context, s *bot.Session) error {
