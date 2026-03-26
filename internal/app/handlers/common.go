@@ -35,7 +35,7 @@ func GetMainMenuByRole(context runtime.Context, DB *sql.DB, user *bot.UserData) 
 		// menuData := db.GetMasetMenuData(DB, user.ChatID)
 		return ui.MainMenuMasterKeyboard(context, user, nil)
 	}
-	return context.Send("Met unexpected role")
+	return context.Send("Неизвестная роль")
 }
 
 func HandleElevateToMaster(context runtime.Context, b *bot.BotData) error {

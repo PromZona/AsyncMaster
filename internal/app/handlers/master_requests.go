@@ -128,7 +128,7 @@ func masterRequestCreationFinilize(context runtime.Context, s *bot.Session) erro
 		}
 	}
 
-	formattedMessage := fmt.Sprintf("MASTER REQUEST\n\n%s", masterRequest.TextRequest)
+	formattedMessage := fmt.Sprintf("Мастер требует внимания\n\n%s", masterRequest.TextRequest)
 	context.SendTo(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
 
 	return context.Send("Message send to resipient")
@@ -155,12 +155,11 @@ func MasterRequestAnswer(context runtime.Context, s *bot.Session) error {
 	}
 
 	s.MasterRequest = masterRequest
-	return context.Send("Write your reply:")
+	return context.Send("Напиши ответ Мастеру")
 }
 
 func MasterRequestAnswerText(context runtime.Context, s *bot.Session) error {
 	if s.MasterRequest == nil {
-		context.Send("Met unexpected error, contact administrator")
 		return fmt.Errorf("master request is nil while trying to write text into it")
 	}
 
@@ -172,7 +171,7 @@ func MasterRequestAnswerText(context runtime.Context, s *bot.Session) error {
 	if err != nil {
 		return err
 	}
-	return context.Send("Answer accepted. Please, roll requested dices if there are any left")
+	return context.Send("Ответ был принят\nНе забудь бросить кости, если Мастер спросил")
 }
 
 func MasterRequestAnswerRoll(context runtime.Context, s *bot.Session) error {
@@ -197,7 +196,7 @@ func MasterRequestAnswerRoll(context runtime.Context, s *bot.Session) error {
 	roll.RollResult = rollResult
 	db.UpdateRollRequest(s.DB, roll)
 
-	textToPlayer := fmt.Sprintf("Roll result:\n%s\n%dd%d: %d", roll.Title, roll.DiceCount, roll.DiceSides, roll.RollResult)
+	textToPlayer := fmt.Sprintf("Результат броска\n%s\n%dd%d: %d", roll.Title, roll.DiceCount, roll.DiceSides, roll.RollResult)
 	return context.Send(textToPlayer)
 }
 
@@ -213,7 +212,7 @@ func MasterRequestFirstUnanswered(context runtime.Context, s *bot.Session) error
 		return err
 	}
 
-	formattedMessage := fmt.Sprintf("MASTER REQUEST\n\n%s", masterRequest.TextRequest)
+	formattedMessage := fmt.Sprintf("Мастер требует внимания\n\n%s", masterRequest.TextRequest)
 	err = context.SendTo(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
 
 	return err

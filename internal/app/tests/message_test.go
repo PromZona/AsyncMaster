@@ -383,7 +383,7 @@ func TestMessage_ListMessages_HappyPath(t *testing.T) {
 	// EVALUATION: check returned message
 	last = rt.MessageManager.Messages[len(rt.MessageManager.Messages)-1]
 
-	if !strings.Contains(last.Text, "From:") {
+	if !strings.Contains(last.Text, "От:") {
 		t.Fatal("expected sender info in message output")
 	}
 

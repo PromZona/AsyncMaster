@@ -10,7 +10,7 @@ import (
 )
 
 func RegistrationStartMessage(context runtime.Context) error {
-	return context.Send("Hello, enter password to log in into the System")
+	return context.Send("Путник, назови заветные руны и войди")
 }
 
 func RegistrationPassword(context runtime.Context, s *bot.Session) error {
@@ -32,9 +32,9 @@ func RegistrationPassword(context runtime.Context, s *bot.Session) error {
 
 	switch password {
 	case passwordPlayer:
-		context.Send("Player password is correct, welcome!")
+		context.Send("Руны верны, Путник, войди же\nПопытай своё счастье в этом проклятом месте")
 		s.RegistrationUser.Role = bot.RolePlayer
-		return context.Send("Please enter your Player Name")
+		return context.Send("Тебе понадоится новоё имя\nВыбирай с умом, никто не должен знать о твоём прошлом\nКак придумаешь напиши его на этом листке..")
 	case passwordMaster:
 		context.Send("Master password is correct, welcome!")
 		s.RegistrationUser.Role = bot.RoleMaster
@@ -53,7 +53,10 @@ func RegistrationPlayerName(context runtime.Context, s *bot.Session) error {
 	}
 
 	s.RegistrationState = bot.RegistrationAwaitFactionName
-	return context.Send("In this game you control a faction of your own. And you charachter is a leader\nNow you need to create your faction\nWrite name for a faction:")
+	text := `
+	О, так говоришь ты из амбициозных, хочешь собрать людей?
+	И как же ты назовёшь Фракцию? Какое имя скоро услышит весь город?`
+	return context.Send(text)
 }
 
 func RegistrationFactionName(context runtime.Context, s *bot.Session) error {
@@ -61,7 +64,21 @@ func RegistrationFactionName(context runtime.Context, s *bot.Session) error {
 
 	s.RegistrationUser.Faction.Name = factionName
 	s.RegistrationState = bot.RegistrationAwaitFactionDescription
-	return context.Send("Now describe your faction. 1 paragraph of text:")
+
+	text := `
+	Не могу понять по имени что это будет..
+	Расскажи немного про свои планы, чего ты хочешь достичь?
+
+	Твои люди будут защитниками правопорядка в городе? Будешь защищать невинных?
+	Хочешь основать свой религиозный культ, и собрать верных последователей?
+	Или ты друид, кто хочет вернуть зеленый цвет в этот каменный город?
+	Или деньги всё о чём ты можешь думать и бесконечное количество способов их заработать?
+
+	.. Не бери в голову что я сказал, не хочу останавливать твой полёт фантазии, ты сам(а) лучше знаешь чего хочешь
+
+	Что это будет за фракция, расскажи мне вкратце..
+	`
+	return context.Send(text)
 }
 
 func RegistrationFactionDescription(context runtime.Context, s *bot.Session) error {
@@ -83,5 +100,12 @@ func registrationFinilize(context runtime.Context, s *bot.Session) error {
 	}
 
 	s.RegistrationState = bot.RegistrationFinished
-	return context.Send("You are ready...\nMaster will contact you soon")
+	text := `
+	Я услышал твою историю, ты можешь идти. Буду ждать чем обернется твоя жизнь
+
+	Обустраивайся в этом городе, в нём хватит места для амбиций каждого
+
+	И запомни главное: Вся магия этого мира держится на Вере людей в магию..
+	`
+	return context.Send(text)
 }

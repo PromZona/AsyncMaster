@@ -31,15 +31,14 @@ func InitialSendMessage(context runtime.Context, s *bot.Session) error {
 		chatids := make([]int64, len(ids))
 		copy(chatids, ids)
 		s.DraftTransaction.To = chatids
-		return context.Send("Write your message:")
+		return context.Send("Напиши своё Послание..")
 	}
 
 	playerNames, chatIDs, err := db.GetNamesAndChatIDsOfAll(s.DB)
 	if err != nil {
-		context.Send("Error happened while processing your request, contact administrator")
 		return err
 	}
-	return context.Send("Names:", ui.PlayerNamesKeyboard(playerNames, chatIDs))
+	return context.Send("Кому отправить Послание", ui.PlayerNamesKeyboard(playerNames, chatIDs))
 }
 
 func InitialSendEveryone(context runtime.Context, s *bot.Session) error {
@@ -60,7 +59,7 @@ func PlayerNameProcess(context runtime.Context, s *bot.Session) error {
 	}
 
 	s.DraftTransaction.To = append(s.DraftTransaction.To, toChatID)
-	return context.Send("Write your message:")
+	return context.Send("Напиши своё Послание..")
 }
 
 func MessageTextProcess(context runtime.Context, s *bot.Session) error {
@@ -74,7 +73,7 @@ func MessageTextProcess(context runtime.Context, s *bot.Session) error {
 	}
 
 	s.DraftMessage = message
-	return context.Send("Do you want to add title for a message?", ui.YesNoKeyboard(bot.HID_message_title_yes, bot.HID_message_title_no))
+	return context.Send("Озаглавить Послание?", ui.YesNoKeyboard(bot.HID_message_title_yes, bot.HID_message_title_no))
 }
 
 func MessageTitleProcess(context runtime.Context, s *bot.Session) error {
@@ -83,7 +82,7 @@ func MessageTitleProcess(context runtime.Context, s *bot.Session) error {
 }
 
 func MessageYesTitle(context runtime.Context, s *bot.Session) error {
-	return context.Send("Write title for your message:")
+	return context.Send("Напиши Заглавие к Посланию..")
 }
 
 func MessageNoTitle(context runtime.Context, s *bot.Session) error {
@@ -130,7 +129,7 @@ func messageCreationFinilize(context runtime.Context, s *bot.Session) error {
 	for _, toChatID := range transaction.To {
 		messageFromPlayerName := userFrom.PlayerName
 
-		formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\n\n %s",
+		formatedMessage := fmt.Sprintf("Заглавие: %s\n\nОт: %s\n\n %s",
 			message.Title,
 			messageFromPlayerName,
 			message.Text)
@@ -140,7 +139,7 @@ func messageCreationFinilize(context runtime.Context, s *bot.Session) error {
 		log.Printf("Send message succesfully. From: %d to %d, transaction id: %d", userFrom.ChatID, toChatID, transaction.ID)
 	}
 
-	context.Send("Message sent")
+	context.Send("Послание Отправлено.\nЯ надеюсь ты сделал(а) мудрый дипломатический ход")
 	user, err := db.GetUserByID(s.DB, chatID)
 	if err != nil {
 		return err
@@ -154,7 +153,7 @@ func ListMessages(context runtime.Context, s *bot.Session) error {
 		return err
 	}
 
-	return context.Send("Your last 10 messages, pick one", ui.UserMessagesKeyboard(messages))
+	return context.Send("Последние 10 полученных Посланий", ui.UserMessagesKeyboard(messages))
 }
 
 func GetMessage(context runtime.Context, s *bot.Session) error {
@@ -175,7 +174,7 @@ func GetMessage(context runtime.Context, s *bot.Session) error {
 	}
 	messageFromPlayerName := user_from.PlayerName
 
-	formatedMessage := fmt.Sprintf("Title: %s\n\nFrom: %s\n\n %s",
+	formatedMessage := fmt.Sprintf("Заглавие: %s\n\nОт: %s\n\n %s",
 		transaction.Message.Title,
 		messageFromPlayerName,
 		transaction.Message.Text)

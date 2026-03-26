@@ -14,7 +14,7 @@ func ErrorRecovery(b *bot.BotData) runtime.Middleware {
 			if err != nil {
 				log.Print("ERROR: ", err)
 				b.ClearUserCache(context.ChatID())
-				context.Send("Error occured while proccesing your request. Please, contact administrator. Returning you to main menu")
+				context.Send("Возникла техническая проблема. Срочно обратись к Мастеру")
 			}
 			return err
 		}

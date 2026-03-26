@@ -10,14 +10,14 @@ import (
 
 func MainMenuPlayerKeyboard(context runtime.Context, user *bot.UserData, menuData *PlayerMenu) error {
 	menuText := fmt.Sprintf(`Menu
-		Player: %s
-		Faction: %s
+		Имя: %s
+		Фракция: %s
 		%s
 		---
-		Resources:
+		Ресурсы:
 		%s
 		---
-		You have %d unanswered Master Requests`,
+		У тебя %d не отвеченных запроса от мастера`,
 		menuData.PlayerName,
 		menuData.FactionName,
 		menuData.FactionDescription,
@@ -59,8 +59,8 @@ func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) runtime.Keyboard
 }
 
 func YesNoKeyboard(yes bot.HandlerID, no bot.HandlerID) runtime.Keyboard {
-	btnNo := runtime.Button{Text: "No", Unique: string(no)}
-	btnYes := runtime.Button{Text: "Yes", Unique: string(yes)}
+	btnNo := runtime.Button{Text: "Нет", Unique: string(no)}
+	btnYes := runtime.Button{Text: "Да", Unique: string(yes)}
 
 	rows := []runtime.Row{}
 	rows = append(rows, runtime.Row{
@@ -76,7 +76,7 @@ func YesNoKeyboard(yes bot.HandlerID, no bot.HandlerID) runtime.Keyboard {
 func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) runtime.Keyboard {
 	allRows := make([]runtime.Row, 0, len(masterRequest.RollRequests)+1)
 
-	btnReply := runtime.Button{Text: "Reply to Master", Unique: string(bot.HID_mr_answer_text), Data: fmt.Sprintf("%d", masterRequest.ID)}
+	btnReply := runtime.Button{Text: "Ответить Мастеру", Unique: string(bot.HID_mr_answer_text), Data: fmt.Sprintf("%d", masterRequest.ID)}
 	allRows = append(allRows, runtime.Row{btnReply})
 
 	for _, roll := range masterRequest.RollRequests {
@@ -129,7 +129,7 @@ func FactionsUpdateFactionsList(users []bot.UserData) runtime.Keyboard {
 
 func FactionsUpdateWhatToUpdate() runtime.Keyboard {
 
-	btnResources := runtime.Button{Text: "Resources", Unique: string(bot.HID_factions_update_resources), Data: ""}
+	btnResources := runtime.Button{Text: "Ресурсы", Unique: string(bot.HID_factions_update_resources), Data: ""}
 
 	keyboard := runtime.Keyboard{
 		{btnResources},
@@ -147,7 +147,7 @@ func CancelMenu() runtime.Keyboard {
 func cancelButton() runtime.Button {
 	btnCancel := runtime.Button{
 		Unique: "cancel",
-		Text:   "Cancel",
+		Text:   "Отмена",
 	}
 	return btnCancel
 }
@@ -193,15 +193,15 @@ func masterMenu() runtime.Keyboard {
 }
 
 func playerMenu(unansweredMRCount int) runtime.Keyboard {
-	btnSend := runtime.Button{Text: "Send Message", Unique: string(bot.HID_message_send)}
-	btnMessages := runtime.Button{Text: "My Messages", Unique: string(bot.HID_message_list)}
-	btnFactions := runtime.Button{Text: "Factions", Unique: string(bot.HID_factions_list)}
+	btnSend := runtime.Button{Text: "Отправить Послание", Unique: string(bot.HID_message_send)}
+	btnMessages := runtime.Button{Text: "Полученные Послания", Unique: string(bot.HID_message_list)}
+	btnFactions := runtime.Button{Text: "Фракции Города", Unique: string(bot.HID_factions_list)}
 
 	masterRequestEmoji := "🟢"
 	if unansweredMRCount > 0 {
 		masterRequestEmoji = "🔴"
 	}
-	masterRequestText := fmt.Sprintf("%s Answer Master Request (%d unanswered)",
+	masterRequestText := fmt.Sprintf("%s Ответить Мастеру (%d запросов ждут)",
 		masterRequestEmoji,
 		unansweredMRCount)
 	btnMasterRequests := runtime.Button{Text: masterRequestText, Unique: string(bot.HID_mr_player_get)}

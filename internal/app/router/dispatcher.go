@@ -1,7 +1,7 @@
 package router
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
@@ -225,8 +225,7 @@ func DispatchCallback(context runtime.Context, b *bot.BotData) error {
 	}
 
 	if route == nil {
-		log.Printf("Met unsupported callback %s", cbUnique)
-		return context.Send("Error occured while processing your command. Please contact administrator")
+		return fmt.Errorf("Met unsupported callback %s", cbUnique)
 	}
 
 	if session.PreviousRoute != nil && len(session.PreviousRoute.NextPossibleCallbacks) != 0 {
@@ -238,7 +237,7 @@ func DispatchCallback(context runtime.Context, b *bot.BotData) error {
 			}
 		}
 		if !isAllowedCB {
-			return context.Send("This action is now allowed right now. Finnish previous action first")
+			return context.Send("Эта руна сейчас не доступна. Закончи делать что делал - и вернись к этой руне позже..")
 		}
 	}
 

@@ -19,14 +19,14 @@ func ListFactions(context runtime.Context, s *bot.Session) error {
 	}
 
 	var text strings.Builder
-	text.WriteString("Factions\n\n")
+	text.WriteString("Фракции\n\n")
 
 	for _, user := range data {
 		faction := fmt.Sprintf(`
-			Faction Name: %s
-			Leader: %s
-			Description: %s
-
+			Фракия: %s
+			Лидер Фракции: %s
+			Описание:
+			%s
 			---
 			`,
 			user.Faction.Name,
