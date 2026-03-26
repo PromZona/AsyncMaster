@@ -415,6 +415,7 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 		 mr.id,
 		 mr.to_player,
 		 mr.text_request,
+		 mr.text_response,
 		 mr.created_at,
 		 mr.updated_at,
 		 mr.state,
@@ -427,7 +428,7 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 		 r.roll_result
 		FROM master_requests mr
 		LEFT JOIN roll_requests r ON mr.id = r.transaction_id 
-		WHERE id = $1`,
+		WHERE mr.id = $1`,
 		id)
 	if err != nil {
 		return nil, err
@@ -437,7 +438,9 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 	var rolls []*bot.RollRequest
 
 	for rows.Next() {
-		var id sql.NullInt32
+		var idScan sql.NullInt32
+		var textRepsone sql.NullString
+
 		var createdAt sql.NullTime
 		var title sql.NullString
 		var diceCount sql.NullInt32
@@ -448,10 +451,11 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 			&request.ID,
 			&request.To,
 			&request.TextRequest,
+			&textRepsone,
 			&request.CreatedAt,
 			&request.UpdatedAt,
 			&request.State,
-			&id,
+			&idScan,
 			&createdAt,
 			&title,
 			&diceCount,
@@ -461,9 +465,13 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 			return nil, err
 		}
 
-		if id.Valid {
+		if textRepsone.Valid {
+			request.TextResponse = textRepsone.String
+		}
+
+		if idScan.Valid {
 			rolls = append(rolls, &bot.RollRequest{
-				ID:         int(id.Int32),
+				ID:         int(idScan.Int32),
 				CreatedAt:  createdAt.Time,
 				Title:      title.String,
 				DiceCount:  int(diceCount.Int32),
@@ -551,6 +559,7 @@ func GetFirstAnsweredMasterRequest(e DBExecutor) (*bot.MasterRequest, error) {
 		 mr.id,
 		 mr.to_player,
 		 mr.text_request,
+		 mr.text_response,
 		 mr.created_at,
 		 mr.updated_at,
 		 mr.state,
@@ -580,6 +589,8 @@ func GetFirstAnsweredMasterRequest(e DBExecutor) (*bot.MasterRequest, error) {
 
 	for rows.Next() {
 		var id sql.NullInt32
+		var textResponse sql.NullString
+
 		var createdAt sql.NullTime
 		var title sql.NullString
 		var diceCount sql.NullInt32
@@ -590,6 +601,7 @@ func GetFirstAnsweredMasterRequest(e DBExecutor) (*bot.MasterRequest, error) {
 			&request.ID,
 			&request.To,
 			&request.TextRequest,
+			&textResponse,
 			&request.CreatedAt,
 			&request.UpdatedAt,
 			&request.State,
@@ -601,6 +613,10 @@ func GetFirstAnsweredMasterRequest(e DBExecutor) (*bot.MasterRequest, error) {
 			&rollResult)
 		if err != nil {
 			return nil, err
+		}
+
+		if textResponse.Valid {
+			request.TextResponse = textResponse.String
 		}
 
 		if id.Valid {

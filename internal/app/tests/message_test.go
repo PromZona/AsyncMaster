@@ -140,16 +140,7 @@ func TestMessage_HappyPath_PlayersAndMaster(t *testing.T) {
 }
 
 func TestMessage_FlowValidation(t *testing.T) {
-	err := TruncateAllTablesDB(application.DB)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rt := application.Runtime.(*runtime.MockRuntime)
-	rt.UserManager.DeleteAllUsers()
-	for k := range application.BotData.Sessions {
-		delete(application.BotData.Sessions, k)
-	}
+	resetState()
 
 	//
 	// SETUP: 2 players
@@ -268,16 +259,7 @@ func TestMessage_FlowValidation(t *testing.T) {
 }
 
 func TestMessage_ListMessages_HappyPath(t *testing.T) {
-	err := TruncateAllTablesDB(application.DB)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rt := application.Runtime.(*runtime.MockRuntime)
-	rt.UserManager.DeleteAllUsers()
-	for k := range application.BotData.Sessions {
-		delete(application.BotData.Sessions, k)
-	}
+	resetState()
 
 	//
 	// SETUP: 3 users

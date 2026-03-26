@@ -51,6 +51,13 @@ func MasterRequestResipient(context runtime.Context, s *bot.Session) error {
 }
 
 func MasterRequestText(context runtime.Context, s *bot.Session) error {
+	s.MasterRequest = &bot.MasterRequest{
+		To:           0,
+		TextRequest:  "",
+		TextResponse: "",
+		State:        bot.MRUnasnwered,
+		RollRequests: nil,
+	}
 	s.MasterRequest.TextRequest = context.MessageText()
 	return context.Send("Do you want to add dice request?", ui.YesNoKeyboard())
 }
