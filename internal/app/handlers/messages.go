@@ -38,7 +38,7 @@ func InitialSendMessage(context runtime.Context, s *bot.Session) error {
 	if err != nil {
 		return err
 	}
-	return context.Send("Кому отправить Послание", ui.PlayerNamesKeyboard(playerNames, chatIDs))
+	return context.Send("Кому отправить Послание", ui.PlayerNamesKeyboard(bot.HID_message_player_name, playerNames, chatIDs))
 }
 
 func InitialSendEveryone(context runtime.Context, s *bot.Session) error {

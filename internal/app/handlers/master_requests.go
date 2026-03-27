@@ -26,7 +26,7 @@ func InitialMasterRequest(context runtime.Context, s *bot.Session) error {
 		return context.Send("Type text which will be sent to players")
 	}
 
-	return context.Send("Pick a player to send to", ui.PlayerNamesKeyboard(playerNames, chatIDs))
+	return context.Send("Pick a player to send to", ui.PlayerNamesKeyboard(bot.HID_mr_resipient, playerNames, chatIDs))
 }
 
 func InitialMasterRequestEveryone(context runtime.Context, s *bot.Session) error {

@@ -18,6 +18,9 @@ func (t *TeleContext) FirstName() string {
 }
 
 func (t *TeleContext) Callback() string {
+	if t.ctx.Callback() == nil {
+		return ""
+	}
 	return t.ctx.Callback().Data
 }
 

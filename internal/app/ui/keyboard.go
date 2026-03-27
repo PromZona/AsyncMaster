@@ -9,14 +9,12 @@ import (
 )
 
 func MainMenuPlayerKeyboard(context runtime.Context, user *bot.UserData, menuData *PlayerMenu) error {
-	menuText := fmt.Sprintf(`Menu
+	menuText := fmt.Sprintf(`
 		Имя: %s
 		Фракция: %s
 		%s
-		---
 		Ресурсы:
 		%s
-		---
 		У тебя %d не отвеченных запроса от мастера`,
 		menuData.PlayerName,
 		menuData.FactionName,
@@ -33,7 +31,7 @@ func MainMenuMasterKeyboard(context runtime.Context, user *bot.UserData, menuDat
 	return context.Send(menuText, masterMenu())
 }
 
-func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) runtime.Keyboard {
+func PlayerNamesKeyboard(callback bot.HandlerID, playerNames []string, chatIDs []int64) runtime.Keyboard {
 	if len(playerNames) != len(chatIDs) {
 		log.Print("Error while creating keyboard, playerNames are not the same size as chatIDs: ", len(playerNames), "; ", len(chatIDs))
 		return nil
@@ -45,7 +43,7 @@ func PlayerNamesKeyboard(playerNames []string, chatIDs []int64) runtime.Keyboard
 		dataString := fmt.Sprintf("%s:%d", name, chatIDs[i])
 		btnPlayerNames = append(
 			btnPlayerNames,
-			runtime.Button{Text: name, Unique: string(bot.HID_message_player_name), Data: dataString})
+			runtime.Button{Text: name, Unique: string(callback), Data: dataString})
 	}
 
 	rows := []runtime.Row{}
@@ -208,7 +206,8 @@ func playerMenu(unansweredMRCount int) runtime.Keyboard {
 
 	rows := []runtime.Row{
 		{btnMasterRequests},
-		{btnSend, btnMessages},
+		{btnSend},
+		{btnMessages},
 		{btnFactions},
 	}
 
