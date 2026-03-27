@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -126,10 +127,12 @@ func masterRequestCreationFinilize(context runtime.Context, s *bot.Session) erro
 		if err != nil {
 			return err
 		}
-	}
 
-	formattedMessage := fmt.Sprintf("Мастер требует внимания\n\n%s", masterRequest.TextRequest)
-	context.SendTo(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
+		formattedMessage := fmt.Sprintf("Мастер требует внимания\n\n%s", masterRequest.TextRequest)
+		context.SendTo(masterRequest.To, formattedMessage, ui.AnswerMasterKeyboard(masterRequest))
+
+		log.Printf("Send Master Request to %d. master request id: %d", res, masterRequest.ID)
+	}
 
 	return context.Send("Message send to resipient")
 }
@@ -171,6 +174,8 @@ func MasterRequestAnswerText(context runtime.Context, s *bot.Session) error {
 	if err != nil {
 		return err
 	}
+
+	log.Printf("Player %d replied to master request %d", context.ChatID(), s.MasterRequest.ID)
 	return context.Send("Ответ был принят\nНе забудь бросить кости, если Мастер спросил")
 }
 
@@ -196,6 +201,7 @@ func MasterRequestAnswerRoll(context runtime.Context, s *bot.Session) error {
 	roll.RollResult = rollResult
 	db.UpdateRollRequest(s.DB, roll)
 
+	log.Printf("Player %d made a roll %d", context.ChatID(), roll.ID)
 	textToPlayer := fmt.Sprintf("Результат броска\n%s\n%dd%d: %d", roll.Title, roll.DiceCount, roll.DiceSides, roll.RollResult)
 	return context.Send(textToPlayer)
 }

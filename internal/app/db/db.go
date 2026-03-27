@@ -74,14 +74,12 @@ func GetUsersAll(e DBExecutor) ([]bot.UserData, error) {
 			&user.Faction.Description,
 			&user.Faction.Resources)
 		if innerErr != nil {
-			log.Print(err)
 			return nil, err
 		}
 		result = append(result, user)
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Print(err)
 		return nil, err
 	}
 
@@ -142,7 +140,6 @@ func GetUserByName(e DBExecutor, playerName string) (*bot.UserData, error) {
 	queryResult := e.QueryRow("SELECT telegram_name, COALESCE(player_name, '') AS player_name, chat_id from users where player_name = $1", playerName)
 	err := queryResult.Scan(&user.TelegramName, &user.PlayerName, &user.ChatID)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	return &user, nil
@@ -152,7 +149,6 @@ func GetUserPlayerNames(e DBExecutor) ([]string, error) {
 	var result []string
 	rows, err := e.Query("SELECT player_name FROM users")
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -161,14 +157,12 @@ func GetUserPlayerNames(e DBExecutor) ([]string, error) {
 		var name string
 		innerErr := rows.Scan(&name)
 		if innerErr != nil {
-			log.Print(err)
 			return nil, err
 		}
 		result = append(result, name)
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Print(err)
 		return nil, err
 	}
 
@@ -249,7 +243,6 @@ func GetMessageByID(e DBExecutor, messageID string) (*bot.Message, error) {
 	queryResult := e.QueryRow("SELECT chat_id, message_title, message_id FROM messages WHERE message_id = $1", messageID)
 	err := queryResult.Scan(&message.ChatID, &message.Title, &message.MessageID)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	return &message, nil
@@ -269,7 +262,6 @@ func CreateMesssageTransaction(e DBExecutor, transaction *bot.MessageTransaction
 		Scan(&transaction.ID, &transaction.CreatedAt)
 
 	if err != nil {
-		log.Printf("SCAN ERROR: %#v\n", err)
 		return nil, err
 	}
 	return transaction, nil
@@ -633,15 +625,6 @@ func GetFirstAnsweredMasterRequest(e DBExecutor) (*bot.MasterRequest, error) {
 }
 
 func UpdateMasterRequest(e DBExecutor, masterRequest *bot.MasterRequest) error {
-
-	/*
-		WHAT DOES NOT WORK:
-		- Player answering with text for master request.
-		WHAT TO DO:
-		- Delete all testing db data. Let's start clean.
-		- Track down if there are some missing logic in handling this case.
-	*/
-
 	_, err := e.Exec(`
 		UPDATE
 		 master_requests
@@ -693,7 +676,6 @@ func GetRollRequestByID(e DBExecutor, rollID int) (*bot.RollRequest, error) {
 	queryResult := e.QueryRow("SELECT id, created_at, title, dice_count, dice_sides FROM roll_requests WHERE id = $1", rollID)
 	err := queryResult.Scan(&request.ID, &request.CreatedAt, &request.Title, &request.DiceCount, &request.DiceSides)
 	if err != nil {
-		log.Print(err)
 		return nil, err
 	}
 	return &request, nil

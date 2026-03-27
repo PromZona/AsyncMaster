@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
 	"os"
 	"strings"
 
@@ -21,6 +22,7 @@ func HandleCancelButton(ctx runtime.Context, b *bot.BotData) error {
 		return nil
 	}
 
+	log.Printf("User %d canceled action", chatID)
 	return GetMainMenuByRole(ctx, b.DB, user)
 }
 

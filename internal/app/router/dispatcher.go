@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
@@ -191,6 +192,7 @@ func DispatchText(context runtime.Context, b *bot.BotData) error {
 		panic("Routes dependency is wrongly set. Expected Route from available routes for given HID")
 	}
 
+	log.Printf("Received Text from %d. Going to process by %s route", chatID, route.Callback)
 	err := route.Handler(context, session)
 	if err != nil {
 		return err
@@ -225,7 +227,7 @@ func DispatchCallback(context runtime.Context, b *bot.BotData) error {
 	}
 
 	if route == nil {
-		return fmt.Errorf("Met unsupported callback %s", cbUnique)
+		return fmt.Errorf("met unsupported callback %s", cbUnique)
 	}
 
 	if session.PreviousRoute != nil && len(session.PreviousRoute.NextPossibleCallbacks) != 0 {
@@ -241,6 +243,7 @@ func DispatchCallback(context runtime.Context, b *bot.BotData) error {
 		}
 	}
 
+	log.Printf("Received Callback from %d. Going to process by %s route", chatID, route.Callback)
 	err := route.Handler(context, session)
 	if err != nil {
 		return err
