@@ -159,6 +159,9 @@ func MasterRequestAnswer(context runtime.Context, s *bot.Session) error {
 		return err
 	}
 
+	if masterRequest == nil {
+		log.Printf("Master Request is actually nil")
+	}
 	s.MasterRequest = masterRequest
 	return context.Send("Напиши ответ Мастеру")
 }
