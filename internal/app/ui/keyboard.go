@@ -92,6 +92,9 @@ func UserMessagesKeyboard(transactions []*bot.MessageTransaction) runtime.Keyboa
 	allRows := make([]runtime.Row, 0, len(transactions)+1)
 	for _, t := range transactions {
 		text := t.Message.Title
+		if text == "" {
+			text = "<Без Заглавия>"
+		}
 		data := fmt.Sprintf("%d", t.ID)
 		btnMessage := runtime.Button{Text: text, Unique: string(bot.HID_message_get), Data: data}
 		allRows = append(allRows, runtime.Row{btnMessage})
