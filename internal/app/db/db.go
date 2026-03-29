@@ -426,8 +426,10 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 
 	var request bot.MasterRequest
 	var rolls []*bot.RollRequest
+	found := false
 
 	for rows.Next() {
+		found = true
 		var idScan sql.NullInt32
 		var textRepsone sql.NullString
 
@@ -470,6 +472,10 @@ func GetMasterRequestByID(e DBExecutor, id int) (*bot.MasterRequest, error) {
 			})
 		}
 	}
+	if !found {
+		return nil, sql.ErrNoRows
+	}
+
 	request.RollRequests = rolls
 	return &request, nil
 }
