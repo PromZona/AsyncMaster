@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/PromZona/AsyncMaster/internal/app/bot"
 	"github.com/PromZona/AsyncMaster/internal/app/db"
@@ -23,6 +24,7 @@ func RegistrationCheck(b *bot.BotData) runtime.Middleware {
 					session = bot.NewSession(b.DB)
 					session.RegistrationState = bot.RegistrationAwaitPassword
 					b.Sessions[chatID] = session
+					log.Printf("Created new session for %d", chatID)
 				}
 
 				var err error
@@ -52,6 +54,7 @@ func RegistrationCheck(b *bot.BotData) runtime.Middleware {
 				if session == nil {
 					session = bot.NewSession(b.DB)
 					b.Sessions[chatID] = session
+					log.Printf("Created new session for %d", chatID)
 				}
 				session.RegistrationState = bot.RegistrationFinished
 			}

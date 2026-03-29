@@ -164,6 +164,7 @@ func DispatchText(context runtime.Context, b *bot.BotData) error {
 	if !ok {
 		session = bot.NewSession(b.DB)
 		b.Sessions[chatID] = session
+		log.Printf("Created new session for %d", chatID)
 	}
 
 	prevRoute := session.PreviousRoute
@@ -217,6 +218,7 @@ func DispatchCallback(context runtime.Context, b *bot.BotData) error {
 	if !ok {
 		session = bot.NewSession(b.DB)
 		b.Sessions[chatID] = session
+		log.Printf("Created new session for %d", chatID)
 	}
 
 	var route *bot.Route
