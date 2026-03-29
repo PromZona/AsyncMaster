@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -228,7 +229,7 @@ func MasterRequestFirstUnanswered(context runtime.Context, s *bot.Session) error
 func MasterRequestGetFirstAnswered(context runtime.Context, s *bot.Session) error {
 	masterRequest, err := db.GetFirstAnsweredMasterRequest(s.DB)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return context.Send("No entries found")
 		}
 		return err
