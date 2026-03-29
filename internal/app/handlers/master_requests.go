@@ -227,16 +227,21 @@ func MasterRequestFirstUnanswered(context runtime.Context, s *bot.Session) error
 }
 
 func MasterRequestGetFirstAnswered(context runtime.Context, s *bot.Session) error {
+	log.Print("DEBUG: Start of the function")
 	masterRequest, err := db.GetFirstAnsweredMasterRequest(s.DB)
 	if err != nil {
+		log.Print("DEBUG: get first answered master request != nil")
 		if errors.Is(err, sql.ErrNoRows) {
+			log.Print("DEBUG: err is ErrNoRows")
 			return context.Send("No entries found")
 		}
 		return err
 	}
 
+	log.Print("DEBUG: Before Get User")
 	player, err := db.GetUserByID(s.DB, int64(masterRequest.To))
 	if err != nil {
+		log.Print("DEBUG: User retrieval, err != nil")
 		return err
 	}
 
