@@ -576,8 +576,10 @@ func GetFirstAnsweredMasterRequest(e DBExecutor) (*bot.MasterRequest, error) {
 
 	var request bot.MasterRequest
 	var rolls []*bot.RollRequest
+	found := false
 
 	for rows.Next() {
+		found = true
 		var id sql.NullInt32
 		var textResponse sql.NullString
 
@@ -620,6 +622,11 @@ func GetFirstAnsweredMasterRequest(e DBExecutor) (*bot.MasterRequest, error) {
 			})
 		}
 	}
+
+	if !found {
+		return nil, sql.ErrNoRows
+	}
+
 	request.RollRequests = rolls
 	return &request, nil
 }
