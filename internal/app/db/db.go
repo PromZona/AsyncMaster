@@ -507,8 +507,10 @@ func GetFirstUnansweredMasterRequest(e DBExecutor, chatID int64) (*bot.MasterReq
 
 	var request bot.MasterRequest
 	var rolls []*bot.RollRequest
+	found := false
 
 	for rows.Next() {
+		found = true
 		var id sql.NullInt32
 		var createdAt sql.NullTime
 		var title sql.NullString
@@ -544,6 +546,10 @@ func GetFirstUnansweredMasterRequest(e DBExecutor, chatID int64) (*bot.MasterReq
 			})
 		}
 	}
+	if !found {
+		return nil, sql.ErrNoRows
+	}
+
 	request.RollRequests = rolls
 	return &request, nil
 }
