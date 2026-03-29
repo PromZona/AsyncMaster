@@ -745,6 +745,7 @@ func GetPlayerMenuData(e DBExecutor, chatID int64) *ui.PlayerMenu {
 		FROM users u
 		JOIN factions f
 			ON f.user_id = u.id
+		WHERE u.chat_id = $1
 		`, chatID, bot.MRUnasnwered).Scan(
 		&result.PlayerName,
 		&result.FactionName,
