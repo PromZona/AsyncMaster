@@ -1,7 +1,7 @@
 package test
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"testing"
 
@@ -19,21 +19,21 @@ var (
 func TestMain(m *testing.M) {
 	application, err = app.InitTesting()
 	if err != nil {
-		fmt.Printf("Testing: Failed initialize application\n%s", err)
+		log.Printf("Testing: Failed initialize application\n%s", err)
 		os.Exit(1)
 	}
 
 	// Clean DB
 	err := DropTablesDB(application.DB)
 	if err != nil {
-		fmt.Printf("Testing: Failed at dropping db\n%s", err)
+		log.Printf("Testing: Failed at dropping db\n%s", err)
 		os.Exit(1)
 	}
 
 	// Goose migration
 	err = goose.Up(application.DB, "./../../../migrations")
 	if err != nil {
-		fmt.Printf("Testing: Failed to apply migrations.\n%s", err)
+		log.Printf("Testing: Failed to apply migrations.\n%s", err)
 		os.Exit(1)
 	}
 

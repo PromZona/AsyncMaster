@@ -11,6 +11,7 @@ import (
 	"github.com/PromZona/AsyncMaster/internal/app/router"
 	"github.com/PromZona/AsyncMaster/internal/app/runtime"
 	"github.com/joho/godotenv"
+	"github.com/pressly/goose/v3"
 	tele "gopkg.in/telebot.v4"
 )
 
@@ -43,6 +44,17 @@ func Init() (*App, error) {
 		return nil, err
 	}
 	log.Print("Database successfully connected!")
+
+	err = goose.Up(db, "./migrations")
+	if err != nil {
+		if err == goose.ErrNoNextVersion {
+			log.Print("No new migrations to apply")
+		} else {
+			log.Fatalf("Failed to apply migrations: %v", err)
+		}
+	} else {
+		log.Print("Migrations applied")
+	}
 
 	var rt runtime.Runtime
 	if *isMock {
@@ -89,9 +101,6 @@ func InitTesting() (*App, error) {
 		log.Fatal("failed to open db connection")
 		return nil, err
 	}
-
-	// TODO:
-	// Delete DB tables, run all migrations
 
 	rt := runtime.NewMockRuntime()
 
