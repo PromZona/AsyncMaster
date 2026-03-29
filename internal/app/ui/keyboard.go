@@ -74,7 +74,7 @@ func YesNoKeyboard(yes bot.HandlerID, no bot.HandlerID) runtime.Keyboard {
 func AnswerMasterKeyboard(masterRequest *bot.MasterRequest) runtime.Keyboard {
 	allRows := make([]runtime.Row, 0, len(masterRequest.RollRequests)+1)
 
-	btnReply := runtime.Button{Text: "Ответить Мастеру", Unique: string(bot.HID_mr_answer_text), Data: fmt.Sprintf("%d", masterRequest.ID)}
+	btnReply := runtime.Button{Text: "Ответить Мастеру", Unique: string(bot.HID_mr_answer), Data: fmt.Sprintf("%d", masterRequest.ID)}
 	allRows = append(allRows, runtime.Row{btnReply})
 
 	for _, roll := range masterRequest.RollRequests {
