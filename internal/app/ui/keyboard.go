@@ -37,18 +37,11 @@ func PlayerNamesKeyboard(callback bot.HandlerID, playerNames []string, chatIDs [
 		return nil
 	}
 
-	var btnPlayerNames []runtime.Button
-
+	rows := []runtime.Row{}
 	for i, name := range playerNames {
 		dataString := fmt.Sprintf("%d", chatIDs[i])
-		btnPlayerNames = append(
-			btnPlayerNames,
-			runtime.Button{Text: name, Unique: string(callback), Data: dataString})
-	}
-
-	rows := []runtime.Row{}
-	if len(btnPlayerNames) > 0 {
-		rows = append(rows, runtime.Row(btnPlayerNames))
+		btn := runtime.Button{Text: name, Unique: string(callback), Data: dataString}
+		rows = append(rows, runtime.Row{btn})
 	}
 	rows = append(rows, runtime.Row{cancelButton()})
 
