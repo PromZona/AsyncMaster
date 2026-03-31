@@ -48,12 +48,8 @@ func InitialSendEveryone(context runtime.Context, s *bot.Session) error {
 
 func PlayerNameProcess(context runtime.Context, s *bot.Session) error {
 	_, cbData := ParseCallbackDataString(context.Callback())
-	splited := strings.SplitAfterN(cbData, ":", 2)
-	if len(splited) != 2 {
-		return fmt.Errorf("splitting callbackdata, met unexpected amount of data: %d", len(splited))
-	}
 
-	toChatID, err := strconv.ParseInt(splited[1], 10, 64)
+	toChatID, err := strconv.ParseInt(cbData, 10, 64)
 	if err != nil {
 		return err
 	}

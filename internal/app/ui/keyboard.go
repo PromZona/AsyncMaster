@@ -40,7 +40,7 @@ func PlayerNamesKeyboard(callback bot.HandlerID, playerNames []string, chatIDs [
 	var btnPlayerNames []runtime.Button
 
 	for i, name := range playerNames {
-		dataString := fmt.Sprintf("%s:%d", name, chatIDs[i])
+		dataString := fmt.Sprintf("%d", chatIDs[i])
 		btnPlayerNames = append(
 			btnPlayerNames,
 			runtime.Button{Text: name, Unique: string(callback), Data: dataString})
