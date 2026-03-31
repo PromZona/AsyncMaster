@@ -93,6 +93,11 @@ var Routes = []*bot.Route{
 		NextPossibleCallbacks: []bot.HandlerID{bot.HID_mr_resipient},
 	},
 	{
+		Callback:              bot.HID_mr_send_everyone,
+		Handler:               handlers.InitialMasterRequestEveryone,
+		NextPossibleCallbacks: []bot.HandlerID{bot.HID_mr_text},
+	},
+	{
 		Callback:              bot.HID_mr_resipient,
 		Handler:               handlers.MasterRequestResipient,
 		NextPossibleCallbacks: []bot.HandlerID{bot.HID_mr_text},

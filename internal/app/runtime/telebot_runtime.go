@@ -4,9 +4,6 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-// ---
-// TeleContext
-// ---
 type TeleContext struct {
 	ctx tele.Context
 }
@@ -70,9 +67,6 @@ func keyboardToMarkup(k ...Keyboard) *tele.ReplyMarkup {
 	return menu
 }
 
-// ---
-// TelebotRuntime
-// ---
 type TelebotRuntime struct {
 	Bot         *tele.Bot
 	middlewares []Middleware
