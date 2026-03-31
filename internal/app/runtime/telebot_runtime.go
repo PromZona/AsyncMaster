@@ -1,8 +1,6 @@
 package runtime
 
 import (
-	"log"
-
 	tele "gopkg.in/telebot.v4"
 )
 
