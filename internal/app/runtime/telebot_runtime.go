@@ -1,6 +1,10 @@
 package runtime
 
-import tele "gopkg.in/telebot.v4"
+import (
+	"log"
+
+	tele "gopkg.in/telebot.v4"
+)
 
 // ---
 // TeleContext
@@ -59,11 +63,18 @@ func keyboardToMarkup(k ...Keyboard) *tele.ReplyMarkup {
 			var btns []tele.Btn
 			for _, btn := range row {
 				btns = append(btns, menu.Data(btn.Text, btn.Unique, btn.Data))
+				log.Printf("BTN: %s | Unique: %s | Data: '%s' | Len: %d\n",
+					btn.Text,
+					btn.Unique,
+					btn.Data,
+					len(btn.Unique+"|"+btn.Data),
+				)
 			}
 			rows = append(rows, menu.Row(btns...))
 		}
 		menu.Inline(rows...)
 	}
+
 	return menu
 }
 
