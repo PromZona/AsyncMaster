@@ -43,7 +43,7 @@ func TestMasterRequest_Create_HappyPath(t *testing.T) {
 	//
 	actions := []string{
 		`/user Master master_request_send`,
-		`/user Master master_request_resipient|John:1`,
+		`/user Master master_request_resipient|1`,
 		`/user Master "Do something important"`,
 		`/user Master master_request_dice_no`,
 	}
@@ -101,7 +101,7 @@ func TestMasterRequest_Create_And_Answer(t *testing.T) {
 	//
 	create := []string{
 		`/user Master master_request_send`,
-		`/user Master master_request_resipient|John:1`,
+		`/user Master master_request_resipient|1`,
 		`/user Master "Attack enemy base"`,
 		`/user Master master_request_dice_no`,
 	}
@@ -187,7 +187,7 @@ func TestMasterRequest_FullFlow(t *testing.T) {
 	//
 	create := []string{
 		`/user Master master_request_send`,
-		`/user Master master_request_resipient|John:1`,
+		`/user Master master_request_resipient|1`,
 		`/user Master "Scout area"`,
 		`/user Master master_request_dice_no`,
 	}

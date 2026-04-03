@@ -49,7 +49,7 @@ func TestMessage_HappyPath_PlayersAndMaster(t *testing.T) {
 	//
 	inputJohn := []string{
 		`/user John message_send`,
-		`/user John message_player_name|Alice:1`, // Alice chatID assumed = 1
+		`/user John message_player_name|1`, // Alice chatID assumed = 1
 		`/user John "Hello Alice"`,
 		`/user John message_title_no`,
 	}
@@ -66,7 +66,7 @@ func TestMessage_HappyPath_PlayersAndMaster(t *testing.T) {
 	//
 	inputAlice := []string{
 		`/user Alice message_send`,
-		`/user Alice message_player_name|John:0`, // John chatID assumed = 0
+		`/user Alice message_player_name|0`, // John chatID assumed = 0
 		`/user Alice "Hello John"`,
 		`/user Alice message_title_no`,
 	}
@@ -179,7 +179,7 @@ func TestMessage_FlowValidation(t *testing.T) {
 	// TEST CASE 2: Skip text → try finalize
 	//
 	_, _ = runtime.ExecuteCommand(rt, `/user John message_send`)
-	_, _ = runtime.ExecuteCommand(rt, `/user John message_player_name|Alice:1`)
+	_, _ = runtime.ExecuteCommand(rt, `/user John message_player_name|1`)
 	_, _ = runtime.ExecuteCommand(rt, `/user John message_title_no`)
 
 	//
@@ -199,12 +199,12 @@ func TestMessage_FlowValidation(t *testing.T) {
 	//
 	validFlow := []string{
 		`/user John message_send`,
-		`/user John message_player_name|Alice:1`,
+		`/user John message_player_name|1`,
 		`/user John "Hello Alice VALID"`,
 		`/user John message_title_no`,
 
 		`/user Alice message_send`,
-		`/user Alice message_player_name|John:0`,
+		`/user Alice message_player_name|0`,
 		`/user Alice "Hello John VALID"`,
 		`/user Alice message_title_no`,
 	}
@@ -301,20 +301,20 @@ func TestMessage_ListMessages_HappyPath(t *testing.T) {
 	actions := []string{
 		// John → Alice
 		`/user John message_send`,
-		`/user John message_player_name|Alice:1`,
+		`/user John message_player_name|1`,
 		`/user John "Hello from John 1"`,
 		`/user John message_title_yes`,
 		`/user John "message title 1"`,
 
 		`/user John message_send`,
-		`/user John message_player_name|Alice:1`,
+		`/user John message_player_name|1`,
 		`/user John "Hello from John 2"`,
 		`/user John message_title_yes`,
 		`/user John "message title 2"`,
 
 		// Bob → Alice
 		`/user Bob message_send`,
-		`/user Bob message_player_name|Alice:1`,
+		`/user Bob message_player_name|1`,
 		`/user Bob "Hello from Bob"`,
 		`/user Bob message_title_yes`,
 		`/user Bob "message title 3"`,

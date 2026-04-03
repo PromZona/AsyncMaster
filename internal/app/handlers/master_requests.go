@@ -24,6 +24,8 @@ func InitialMasterRequest(context runtime.Context, s *bot.Session) error {
 		return err
 	}
 
+	s.Resipients = nil
+
 	if s.IsSendEveryone {
 		s.Resipients = append(s.Resipients, chatIDs...)
 		return context.Send("Type text which will be sent to players")
