@@ -218,7 +218,14 @@ func MasterRequestAnswerRoll(context runtime.Context, s *bot.Session) error {
 func MasterRequestFirstUnanswered(context runtime.Context, s *bot.Session) error {
 	masterRequest, err := db.GetFirstUnansweredMasterRequest(s.DB, context.ChatID())
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return context.Send(" У тебя нет запросов от мастера. Там же на кнопке написано, зачем жмёшь?\nОна если красным не светится, ты не жми её. Будешь много жать - она сломается. НЕ БАЛУЙСЯ С КНОПКОЙ!")
+		}
 		return err
+	}
+
+	if masterRequest == nil {
+		return context.Send("У тебя нет запросов от мастера. Там же на кнопке написано, зачем жмёшь?\nОна если красным не светится, ты не жми её. Будешь много жать - она сломается. НЕ БАЛУЙСЯ С КНОПКОЙ!")
 	}
 
 	formattedMessage := fmt.Sprintf("Мастер требует внимания\n\n%s", masterRequest.TextRequest)
