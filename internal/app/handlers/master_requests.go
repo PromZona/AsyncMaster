@@ -25,6 +25,7 @@ func InitialMasterRequest(context runtime.Context, s *bot.Session) error {
 	}
 
 	s.Resipients = nil
+	s.RollRequests = nil
 
 	if s.IsSendEveryone {
 		s.Resipients = append(s.Resipients, chatIDs...)
